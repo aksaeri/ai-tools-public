@@ -524,7 +524,7 @@ def scan_repo(cfg: Config, repo: Path) -> list:
 HOOK = """#!/bin/sh
 # Installed by skill-release. Blocks a push if any tracked file matches your scrub list
 # or looks private (emails, private IPs, keys, home paths).
-exec uv run --quiet {script} scan --config {cfg} --repo "$(git rev-parse --show-toplevel)"
+exec uv run --quiet {script} --config {cfg} scan --repo "$(git rev-parse --show-toplevel)"
 """
 
 
