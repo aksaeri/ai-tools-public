@@ -1,14 +1,14 @@
 # AI tools
 
-Claude skills and tools I use every week, cleaned up so you can install them or build your own.
+Claude skills I use most weeks, cleaned up so you can install them or build your own.
 
 **Browse them with demos:** https://aksaeri.github.io/ai-tools-public/
 
 | Tool | What it does |
 |---|---|
-| [gdocs-suggest](tools/gdocs-suggest/) | Claude comments on, copyedits and fills gaps in a Google Doc, with every word it adds in red or marked [Claude]. |
-| [zotero-librarian](tools/zotero-librarian/) | Turns a DOI, arXiv ID, URL or half-remembered title into a clean, correctly typed record in your Zotero library. |
-| [skill-release](tools/skill-release/) | Checks a skill before you share it, then exports a cleaned copy one way into a public repo. |
+| [gdocs-suggest](tools/gdocs-suggest/) | Claude comments on, copyedits and fills gaps in a Google Doc. Everything it adds is red or marked [Claude]. |
+| [zotero-librarian](tools/zotero-librarian/) | Turns a DOI, arXiv ID, link or half-remembered title into a correctly typed record in your Zotero library. |
+| [skill-release](tools/skill-release/) | Checks a skill you want to share for private details, like machine names or your email, then copies a cleaned version into a public repo. |
 
 ## Install a skill in Claude Code
 
@@ -18,6 +18,8 @@ claude plugin install gdocs-suggest@aksaeri-tools
 ```
 
 Update with `claude plugin update <tool>@aksaeri-tools`. On Windows without an SSH key for GitHub, set `CLAUDE_CODE_PLUGIN_PREFER_HTTPS=1` first.
+
+In Cowork, open Customize, then Plugins, then Add marketplace, and enter `aksaeri/ai-tools-public`.
 
 ## Build your own
 
