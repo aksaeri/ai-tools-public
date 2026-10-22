@@ -1,0 +1,7 @@
+{
+  "name": "skill-release",
+  "description": "Check a skill before sharing it publicly, then export a cleaned copy one way into a public repo.",
+  "author": {
+    "name": "Alexander Saeri"
+  }
+}
