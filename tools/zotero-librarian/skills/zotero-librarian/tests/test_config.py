@@ -26,9 +26,9 @@ def test_save_creates_parent_dir(tmp_path, monkeypatch):
 def test_apply_library_override_group_by_spec():
     cfg = {"api_key": "k", "library_id": "111", "library_type": "user",
            "default_collection": "COLL"}
-    out = config.apply_library_override(cfg, "group:6626682")
+    out = config.apply_library_override(cfg, "group:1234567")
     assert out["library_type"] == "group"
-    assert out["library_id"] == "6626682"
+    assert out["library_id"] == "1234567"
     assert out["api_key"] == "k"
     # a collection key is library-specific; the configured default must not leak
     assert out["default_collection"] is None
@@ -39,8 +39,8 @@ def test_apply_library_override_group_by_spec():
 
 def test_apply_library_override_bare_numeric_is_group():
     cfg = {"api_key": "k", "library_id": "111", "library_type": "user"}
-    out = config.apply_library_override(cfg, "6626682")
-    assert (out["library_type"], out["library_id"]) == ("group", "6626682")
+    out = config.apply_library_override(cfg, "1234567")
+    assert (out["library_type"], out["library_id"]) == ("group", "1234567")
 
 
 def test_apply_library_override_user_uses_config_id():

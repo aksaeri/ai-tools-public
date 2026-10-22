@@ -6,11 +6,6 @@ library. Clean identifiers resolve deterministically against Crossref, arXiv,
 OpenLibrary, and PubMed; messy inputs are resolved by a Sonnet subagent that
 searches authoritative sources, then pushed through the same validated path.
 
-> **Cloning this with Claude Code?** Open the repo and Claude will read
-> [`.claude/CLAUDE.md`](.claude/CLAUDE.md) — a full onboarding/cookbook that walks
-> through setup, installing it as a skill, verifying, and day-to-day use. It can run
-> most of the setup for you.
-
 ## Install
 
 Requires [uv](https://docs.astral.sh/uv/) (cross-platform). From the repo root:
@@ -51,8 +46,8 @@ default config), pass `--group <id>` — or `--library <user|user:id|group:id>` 
 to `add`, `lookup`, or `collections`:
 
 ```bash
-./scripts/zl collections --group 6626682                       # list a group's collections
-./scripts/zl lookup "10.1145/3790096" --group 6626682          # add into that group
+./scripts/zl collections --group 1234567                       # list a group's collections
+./scripts/zl lookup "10.1145/3790096" --group 1234567          # add into that group
 ```
 
 Inside Claude Code, just say "add <thing> to Zotero" and the skill orchestrates

@@ -123,10 +123,10 @@ def test_add_group_override_targets_group_library(monkeypatch, capsys, tmp_confi
         return stub
     monkeypatch.setattr(Z, "get_client", fake_get_client)
     payload = json.dumps({"itemType": "journalArticle", "title": "Hello"})
-    code = cli.main(["add", "--json", payload, "--no-dedupe", "--group", "6626682"])
+    code = cli.main(["add", "--json", payload, "--no-dedupe", "--group", "1234567"])
     assert code == 0
     assert captured["cfg"]["library_type"] == "group"
-    assert captured["cfg"]["library_id"] == "6626682"
+    assert captured["cfg"]["library_id"] == "1234567"
 
 
 def test_add_library_spec_override_targets_group(monkeypatch, capsys, tmp_config):
@@ -140,9 +140,9 @@ def test_add_library_spec_override_targets_group(monkeypatch, capsys, tmp_config
         return stub
     monkeypatch.setattr(Z, "get_client", fake_get_client)
     payload = json.dumps({"itemType": "journalArticle", "title": "Hello"})
-    code = cli.main(["add", "--json", payload, "--no-dedupe", "--library", "group:6626682"])
+    code = cli.main(["add", "--json", payload, "--no-dedupe", "--library", "group:1234567"])
     assert code == 0
-    assert (captured["cfg"]["library_type"], captured["cfg"]["library_id"]) == ("group", "6626682")
+    assert (captured["cfg"]["library_type"], captured["cfg"]["library_id"]) == ("group", "1234567")
 
 
 def test_collections_group_override(monkeypatch, capsys, tmp_config):
@@ -159,9 +159,9 @@ def test_collections_group_override(monkeypatch, capsys, tmp_config):
         captured["cfg"] = cfg
         return stub
     monkeypatch.setattr(Z, "get_client", fake_get_client)
-    code = cli.main(["collections", "--group", "6626682"])
+    code = cli.main(["collections", "--group", "1234567"])
     assert code == 0
-    assert (captured["cfg"]["library_type"], captured["cfg"]["library_id"]) == ("group", "6626682")
+    assert (captured["cfg"]["library_type"], captured["cfg"]["library_id"]) == ("group", "1234567")
 
 
 def test_add_attach_pdf_calls_attachment(monkeypatch, capsys, tmp_config):
