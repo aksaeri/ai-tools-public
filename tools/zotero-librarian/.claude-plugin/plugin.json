@@ -1,6 +1,6 @@
 {
   "name": "zotero-librarian",
-  "description": "Resolve a paper, book, or citation (DOI, arXiv/ISBN/PMID, a URL, or freeform title) to authoritative metadata and add it to a Zotero cloud library.",
+  "description": "Turns a DOI, arXiv ID, URL or half-remembered title into a clean, correctly typed record in your Zotero library.",
   "author": {
     "name": "Alexander Saeri"
   }

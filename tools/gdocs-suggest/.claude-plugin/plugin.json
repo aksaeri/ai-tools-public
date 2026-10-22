@@ -1,6 +1,6 @@
 {
   "name": "gdocs-suggest",
-  "description": "Use when asked to review, copyedit, comment on, mark up, redline or suggest changes in a Google Doc, or to fill {TBC}, [add detail] or similar placeholders in one, so that AI-written text stays vis\u2026",
+  "description": "Claude comments on, copyedits and fills gaps in a Google Doc, with every word it adds in red or marked [Claude].",
   "author": {
     "name": "Alexander Saeri"
   }

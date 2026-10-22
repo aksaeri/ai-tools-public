@@ -1,6 +1,8 @@
 title: zotero-librarian
-summary: Resolve a paper, book, or citation (DOI, arXiv/ISBN/PMID, a URL, or freeform title) to authoritative metadata and add it to a Zotero cloud library.
-how_i_use_it: 'TODO: a paragraph in the author''s own words.'
-endorsement: ''
+order: 2
+summary: Turns a DOI, arXiv ID, URL or half-remembered title into a clean, correctly typed record in your Zotero library.
+how_i_use_it: |
+  When I find something worth citing, I paste whatever I have into Claude and say "add this to Zotero": a link, a DOI, or a title from a talk. Clean identifiers go straight through Crossref or arXiv. For a report on an organisation's website, Claude reads the page or PDF itself and fills in the right item type, authors and abstract, and asks me first if there's both a press release and the report it announces.
+endorsement: I use this most weeks. Endorsed.
 media: []
-brief: ''
+brief: demo/zotero-librarian-brief.md

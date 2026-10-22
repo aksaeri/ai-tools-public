@@ -1,0 +1,7 @@
+# Site settings. The build reads this and every tools/*/tool.yaml.
+title: AI tools
+tagline: Claude skills and tools I use every week, cleaned up so you can install them or build your own.
+author: Alexander Saeri
+url: https://aksaeri.github.io/ai-tools-public/   # becomes https://tools.aksaeri.com/ later
+repo: aksaeri/ai-tools-public
+marketplace: aksaeri-tools

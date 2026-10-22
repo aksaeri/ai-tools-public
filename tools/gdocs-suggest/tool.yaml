@@ -1,6 +1,12 @@
 title: gdocs-suggest
-summary: "Use when asked to review, copyedit, comment on, mark up, redline or suggest changes in a Google Doc, or to fill {TBC}, [add detail] or similar placeholders in one, so that AI-written text stays vis\u2026"
-how_i_use_it: 'TODO: a paragraph in the author''s own words.'
-endorsement: Built 2026-10-06 after the Docs API gained pinned comments and suggest-mode writes. Replaces an August 2026 attempt that drove Suggesting mode through the browser (worked, but took 11+ minutes per doc). 48 unit tests; tested live on six scratch docs, including undo after a simulated dropped connection.
-media: []
-brief: ''
+order: 1
+summary: Claude comments on, copyedits and fills gaps in a Google Doc, with every word it adds in red or marked [Claude].
+how_i_use_it: |
+  When a draft needs a copyedit or a review, I ask Claude to mark it up in the Doc itself. Rewrites and filled-in {TBC} markers appear in red under my original, so I can compare line by line and keep what I want. Small fixes come as normal suggestions I can accept or reject, and questions come as comments starting [Claude]. A week later I can still tell which sentences are mine.
+endorsement: I use this on most drafts I share with colleagues. Endorsed.
+media:
+  - image: demo/before.png
+    caption: A made-up workshop summary, before.
+  - image: demo/after.png
+    caption: After one run. Suggested fixes inline, and a filled placeholder and a rewrite in red under the originals.
+brief: demo/gdocs-suggest-brief.md

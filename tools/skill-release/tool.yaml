@@ -1,6 +1,8 @@
 title: skill-release
-summary: Check a skill before sharing it publicly, then export a cleaned copy one way into a public repo.
-how_i_use_it: 'TODO: a paragraph in the author''s own words.'
-endorsement: Built to share my own skills without developing them in public. 18 unit tests; used for the first exports to my public tools repo.
+order: 3
+summary: Checks a skill before you share it, then exports a cleaned copy one way into a public repo. Your private patterns stay outside it.
+how_i_use_it: |
+  This site is built with it. I keep developing my skills where they live. When I want to share one, Claude runs the check, fixes or rewrites anything private in the public copy, and commits it here. I read the diff before anything is pushed.
+endorsement: New in October 2026. I use it for every tool on this site.
 media: []
-brief: ''
+brief: demo/skill-release-brief.md

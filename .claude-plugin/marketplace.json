@@ -1,0 +1,26 @@
+{
+  "name": "aksaeri-tools",
+  "owner": {
+    "name": "Alexander Saeri"
+  },
+  "metadata": {
+    "description": "Claude skills and tools I use every week, cleaned up so you can install them or build your own."
+  },
+  "plugins": [
+    {
+      "name": "gdocs-suggest",
+      "source": "./tools/gdocs-suggest",
+      "description": "Claude comments on, copyedits and fills gaps in a Google Doc, with every word it adds in red or marked [Claude]."
+    },
+    {
+      "name": "zotero-librarian",
+      "source": "./tools/zotero-librarian",
+      "description": "Turns a DOI, arXiv ID, URL or half-remembered title into a clean, correctly typed record in your Zotero library."
+    },
+    {
+      "name": "skill-release",
+      "source": "./tools/skill-release",
+      "description": "Checks a skill before you share it, then exports a cleaned copy one way into a public repo. Your private patterns stay outside it."
+    }
+  ]
+}
