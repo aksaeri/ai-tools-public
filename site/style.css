@@ -74,3 +74,5 @@ html.js .nojs { display: none; }
 .btn:hover { background: var(--accent-strong); }
 .btn:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
 @media (max-width: 520px) { .copyrow { flex-direction: column; } }
+/* Grid children default to min-width:auto, which lets a long code line widen the page. */
+.hero > *, .col > *, .panel > *, main.wrap > * { min-width: 0; }
