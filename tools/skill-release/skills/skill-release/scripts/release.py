@@ -451,13 +451,15 @@ def export(cfg: Config, name: str, commit: bool = True) -> Report:
 
     fm, _ = split_frontmatter(rep.files["SKILL.md"])
     desc = _first_sentence(str(fm.get("description", "")))
-    plugin = {"name": tool.name, "description": desc}
+    tool_yaml = root / "tool.yaml"
+    summary = (yaml.safe_load(tool_yaml.read_text()) or {}).get("summary") if tool_yaml.exists() else None
+    plugin = {"name": tool.name, "description": summary or desc}
     if cfg.author:
         plugin["author"] = {"name": cfg.author}
     (root / ".claude-plugin").mkdir(parents=True, exist_ok=True)
-    (root / ".claude-plugin" / "plugin.json").write_text(json.dumps(plugin, indent=2) + "\n")
+    (root / ".claude-plugin" / "plugin.json").write_text(json.dumps(plugin, indent=2, ensure_ascii=False) + "\n")
     snap = {"source_ref": rep.ref, "exported": dt.date.today().isoformat(), "surfaces": rep.assessment}
-    (root / "snapshot.json").write_text(json.dumps(snap, indent=2) + "\n")
+    (root / "snapshot.json").write_text(json.dumps(snap, indent=2, ensure_ascii=False) + "\n")
     if not (root / "tool.yaml").exists():
         (root / "tool.yaml").write_text(yaml.safe_dump({
             "title": tool.name, "summary": desc,
