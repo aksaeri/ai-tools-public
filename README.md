@@ -2,7 +2,7 @@
 
 Claude skills I use most weeks, cleaned up so you can install them or build your own.
 
-**Browse them with demos:** https://aksaeri.github.io/ai-tools-public/
+**Browse them with demos:** https://tools.aksaeri.com/
 
 | Tool | What it does |
 |---|---|
