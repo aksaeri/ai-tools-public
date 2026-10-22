@@ -254,7 +254,8 @@ def tool_page(cfg, t):
         return f"<p>This one doesn't run in {e(label)}:</p><ul>{why}</ul><p>Use Claude Code, or build your own version from the brief.</p>"
 
     if t["skills"]:
-        need_line = f"<p>You'll need {e(', '.join(needs))}.</p>" if needs else ""
+        listed = needs[0] if len(needs) == 1 else ", ".join(needs[:-1]) + " and " + needs[-1] if needs else ""
+        need_line = f"<p>You'll need {e(listed)}.</p>" if needs else ""
         tab("cc", "Claude Code", f"""<p>Run these once in a terminal. To update later, run <code>claude plugin update {e(slug)}@{e(cfg['marketplace'])}</code>.</p>
 <pre><code>claude plugin marketplace add {e(cfg['repo'])}
 claude plugin install {e(slug)}@{e(cfg['marketplace'])}</code></pre>{need_line}
