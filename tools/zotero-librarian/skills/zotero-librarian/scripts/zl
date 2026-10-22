@@ -1,0 +1,27 @@
+#!/bin/sh
+# zl — platform-portable launcher for the zotero-librarian CLI.
+#
+# Runs the CLI inside the skill's own uv-managed environment, choosing a uv
+# runner that actually exists on the host. This is what lets one tracked
+# SKILL.md drive both machines:
+#
+#   - Linux: a standalone `uv` binary is on PATH, but there is no
+#     `python` command (only `python3`) and uv is NOT importable as a module,
+#     so `python -m uv` fails. We use bare `uv`.
+#   - Windows: bare `uv` is not on PATH in Claude Code's non-interactive
+#     shell, but uv is installed as a pip module, so `python -m uv` works.
+#
+# The skill's project directory is derived from THIS script's location, so the
+# launcher works whether it lives in the GitHub clone or the installed copy
+# under ~/.claude/skills/, with no hardcoded path.
+set -eu
+
+SKILL_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+
+if command -v uv >/dev/null 2>&1; then
+  exec uv run --project "$SKILL_DIR" zotero-librarian "$@"
+elif command -v python >/dev/null 2>&1; then
+  exec python -m uv run --project "$SKILL_DIR" zotero-librarian "$@"
+else
+  exec python3 -m uv run --project "$SKILL_DIR" zotero-librarian "$@"
+fi

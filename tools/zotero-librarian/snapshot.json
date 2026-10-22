@@ -1,0 +1,24 @@
+{
+  "source_ref": "56ad6cefe2a9fa6d5d55f92285fc8982352c615b",
+  "exported": "2026-10-23",
+  "surfaces": {
+    "claude-code": {
+      "verdict": "works",
+      "reasons": [],
+      "needs": [
+        "Python",
+        "uv"
+      ]
+    },
+    "claude-ai": {
+      "verdict": "no",
+      "reasons": [
+        "needs uv, which claude.ai can't run",
+        "description is 276 characters; claude.ai wants 200 or fewer",
+        "has scripts, so code execution must be on",
+        "calls outside services; claude.ai's sandbox may block them",
+        "needs your own API key or settings"
+      ]
+    }
+  }
+}

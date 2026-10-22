@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zotero-librarian"
+version = "0.1.0"
+description = "Resolve bibliographic input to authoritative metadata and add to Zotero."
+authors = [{name = "Alexander K. Saeri"}]
+license = {file = "LICENSE"}
+requires-python = ">=3.10"
+dependencies = [
+    "pyzotero>=1.5",
+    "requests>=2.31",
+]
+
+[project.scripts]
+zotero-librarian = "zotlib.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8", "pytest-timeout>=2"]
+
+[tool.setuptools]
+packages = ["zotlib"]
+
+[tool.pytest.ini_options]
+timeout = 10
+testpaths = ["tests"]

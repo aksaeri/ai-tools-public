@@ -1,0 +1,7 @@
+{
+  "name": "zotero-librarian",
+  "description": "Resolve a paper, book, or citation (DOI, arXiv/ISBN/PMID, a URL, or freeform title) to authoritative metadata and add it to a Zotero cloud library.",
+  "author": {
+    "name": "Alexander Saeri"
+  }
+}
