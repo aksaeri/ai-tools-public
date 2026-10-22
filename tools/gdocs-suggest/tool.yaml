@@ -1,0 +1,6 @@
+title: gdocs-suggest
+summary: "Use when asked to review, copyedit, comment on, mark up, redline or suggest changes in a Google Doc, or to fill {TBC}, [add detail] or similar placeholders in one, so that AI-written text stays vis\u2026"
+how_i_use_it: 'TODO: a paragraph in the author''s own words.'
+endorsement: Built 2026-10-06 after the Docs API gained pinned comments and suggest-mode writes. Replaces an August 2026 attempt that drove Suggesting mode through the browser (worked, but took 11+ minutes per doc). 48 unit tests; tested live on six scratch docs, including undo after a simulated dropped connection.
+media: []
+brief: ''

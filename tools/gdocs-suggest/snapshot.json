@@ -1,0 +1,23 @@
+{
+  "source_ref": "9be87e2849c7ef3323cc3e2f369b639f5a856828",
+  "exported": "2026-10-23",
+  "surfaces": {
+    "claude-code": {
+      "verdict": "works",
+      "reasons": [],
+      "needs": [
+        "Node",
+        "the gws CLI signed in to Google"
+      ]
+    },
+    "claude-ai": {
+      "verdict": "no",
+      "reasons": [
+        "needs the gws CLI signed in to Google, which claude.ai can't run",
+        "description is 256 characters; claude.ai wants 200 or fewer",
+        "has scripts, so code execution must be on",
+        "calls outside services; claude.ai's sandbox may block them"
+      ]
+    }
+  }
+}

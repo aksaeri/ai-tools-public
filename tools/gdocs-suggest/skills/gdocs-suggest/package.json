@@ -1,0 +1,11 @@
+{
+  "name": "gdocs-suggest",
+  "version": "1.0.0",
+  "description": "Comment on, add red text to, and suggest edits in Google Docs via the gws CLI",
+  "main": "scripts/gdocs_suggest.js",
+  "scripts": {
+    "test": "node --test scripts/gdocs_suggest.test.js"
+  },
+  "type": "module",
+  "dependencies": {}
+}
