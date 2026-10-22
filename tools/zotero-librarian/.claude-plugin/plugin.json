@@ -1,6 +1,6 @@
 {
   "name": "zotero-librarian",
-  "description": "Turns a DOI, arXiv ID, URL or half-remembered title into a clean, correctly typed record in your Zotero library.",
+  "description": "Turns a DOI, arXiv ID, link or half-remembered title into a correctly typed record in your Zotero library.",
   "author": {
     "name": "Alexander Saeri"
   }

@@ -84,26 +84,55 @@ def make_zip(skill_dir: Path, dest: Path):
 
 # --- pages ------------------------------------------------------------------------
 
-def surfaces(t):
-    s = t["snapshot"].get("surfaces", {})
-    cc = s.get("claude-code", {}).get("verdict")
-    ai = s.get("claude-ai", {}).get("verdict")
-    chips = []
-    if t["skills"] and cc == "works":
-        chips.append(("Claude Code", True))
-    if t["skills"]:
-        chips.append(("claude.ai", ai in ("works", "caveat")))
-    chips.append(("Build your own", True))
-    return chips
+# Where a tool can run, in the order a reader meets them. Keys match snapshot.json.
+SURFACES = [("claude-code", "Claude Code"), ("cowork", "Cowork"), ("claude-ai", "Claude chat")]
+OK = ("works", "caveat")
 
 
-def chips_html(t):
-    return "".join(f'<em class="{"y" if ok else "n"}">{e(label)}{"" if ok else " ✕"}</em>' for label, ok in surfaces(t))
+def surface_info(t, key):
+    s = dict(t["snapshot"].get("surfaces", {}).get(key, {}))
+    s.update((t.get("surfaces") or {}).get(key, {}))       # tool.yaml may override a verdict or its reasons
+    return s
+
+
+def available(t):
+    """Labels of the routes that work for this tool, for the card and the top of its page."""
+    out = [label for key, label in SURFACES if t["skills"] and surface_info(t, key).get("verdict") in OK]
+    if t.get("brief"):
+        out.append("Build your own")
+    return out
+
+
+def tags_html(t):
+    items = "".join(f"<li>{e(label)}</li>" for label in available(t))
+    return f'<ul class="tags" aria-label="Works in">{items}</ul>'
+
+
+def asset(p: str) -> str:
+    # demo/ is copied to the tool's folder on the site, so drop the prefix.
+    return p[len("demo/"):] if p.startswith("demo/") else p
+
+
+def header_svg(t) -> str:
+    p = t.get("header")
+    if not p or not (t["dir"] / p).exists():
+        return ""
+    svg = (t["dir"] / p).read_text()
+    return svg[svg.find("<svg"):]
+
+
+THEME_BOOT = """<script>
+try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}
+</script>"""
+
+THEME_SWITCH = """<div class="theme" role="group" aria-label="Colour theme">
+<button type="button" data-set-theme="system">System</button><button type="button" data-set-theme="light">Light</button><button type="button" data-set-theme="dark">Dark</button>
+</div>"""
 
 
 def page(title, body, depth, cfg, desc=""):
-    css = "../" * depth + "style.css"
-    home = "../" * depth or "./"
+    up = "../" * depth
+    home = up or "./"
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -111,17 +140,18 @@ def page(title, body, depth, cfg, desc=""):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{e(title)}</title>
 <meta name="description" content="{e(desc or cfg['tagline'])}">
+{THEME_BOOT}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="{css}">
+<link rel="stylesheet" href="{up}style.css">
 </head>
 <body>
-<header class="top"><div class="wrap"><a class="wordmark" href="{home}">{e(cfg['author'])}</a><span class="muted">· {e(cfg['title'])}</span></div></header>
+<header class="top"><div class="wrap"><a class="wordmark" href="{home}">{e(cfg['author'])}</a><span class="muted">{e(cfg['title'])}</span>{THEME_SWITCH}</div></header>
 <main class="wrap">
 {body}
 </main>
 <footer class="wrap muted">MIT licence · <a href="https://github.com/{e(cfg['repo'])}">Source on GitHub</a> · <a href="{home}llms.txt">llms.txt</a></footer>
-<script src="{'../' * depth}site.js"></script>
+<script src="{up}site.js"></script>
 </body>
 </html>
 """
@@ -130,32 +160,29 @@ def page(title, body, depth, cfg, desc=""):
 def index_page(cfg, tools):
     cards = []
     for t in tools:
-        poster = next((m.get("poster") or m.get("image") for m in t.get("media", []) if m.get("poster") or m.get("image")), None)
-        img = f'<img src="{e(t["slug"])}/{e(asset(poster))}" alt="" loading="lazy">' if poster else '<div class="ph"></div>'
+        art = header_svg(t)
+        if not art:
+            poster = next((m.get("poster") or m.get("image") for m in t.get("media", []) if m.get("poster") or m.get("image")), None)
+            art = f'<img src="{e(t["slug"])}/{e(asset(poster))}" alt="" loading="lazy">' if poster else ""
         cards.append(f"""<a class="card" href="{e(t['slug'])}/">
-  <div class="poster">{img}</div>
-  <div class="cb"><b>{e(t['title'])}</b><span>{e(t['summary'])}</span><div class="works">{chips_html(t)}</div></div>
+  <div class="poster" aria-hidden="true">{art}</div>
+  <div class="cb"><b>{e(t['title'])}</b><span>{e(t['summary'])}</span>{tags_html(t)}</div>
 </a>""")
     body = f"""<section class="hero">
 <h1>{e(cfg['title'])}</h1>
 <p class="lede">{e(cfg['tagline'])}</p>
-<p class="muted">Each tool has a short demo, how I use it, and a brief you can hand to your own Claude to build a version for your setup. Skills install into Claude Code in two commands.</p>
+<p class="muted">{e(cfg.get('intro', ''))}</p>
 </section>
 <section class="cards">
 {''.join(cards)}
 </section>
 <section class="col">
-<h2>Install any skill in Claude Code</h2>
+<h2>Install a skill in Claude Code</h2>
 <pre><code>claude plugin marketplace add {e(cfg['repo'])}
 claude plugin install &lt;tool&gt;@{e(cfg['marketplace'])}</code></pre>
-<p class="note">On Windows without an SSH key for GitHub, set <code>CLAUDE_CODE_PLUGIN_PREFER_HTTPS=1</code> first. Update later with <code>claude plugin update &lt;tool&gt;@{e(cfg['marketplace'])}</code>.</p>
+<p class="note">In Cowork, open Customize, then Plugins, then Add marketplace, and enter <code>{e(cfg['repo'])}</code>.</p>
 </section>"""
     return page(cfg["title"], body, 0, cfg)
-
-
-def asset(p: str) -> str:
-    # demo/ is copied to the tool's folder on the site, so drop the prefix.
-    return p[len("demo/"):] if p.startswith("demo/") else p
 
 
 def media_html(t):
@@ -166,14 +193,52 @@ def media_html(t):
             poster = f' poster="{e(asset(m["poster"]))}"' if m.get("poster") else ""
             out.append(f'<figure><video controls muted playsinline preload="none"{poster}><source src="{e(asset(m["video"]))}" type="video/mp4"></video>{cap}</figure>')
         elif m.get("image"):
-            out.append(f'<figure><img src="{e(asset(m["image"]))}" alt="{e(m.get("caption", ""))}" loading="lazy">{cap}</figure>')
-    return "\n".join(out) or '<p class="note">Demo video coming.</p>'
+            out.append(f'<figure><img src="{e(asset(m["image"]))}" alt="{e(m.get("alt") or m.get("caption", ""))}" loading="lazy">{cap}</figure>')
+    return "\n".join(out)
+
+
+BLOCKERS = ("can't run", "doesn't have")
+
+
+def shown_reasons(s):
+    """When a surface can't run the tool, the blockers are the only reasons worth showing."""
+    reasons = s.get("reasons", [])
+    if s.get("verdict") not in OK:
+        reasons = [r for r in reasons if any(b in r for b in BLOCKERS)] or reasons
+    return [r[:1].upper() + r[1:] + ("" if r.endswith(".") else ".") for r in reasons]
+
+
+def prose_html(text: str) -> str:
+    """Paragraphs split by blank lines; a block whose lines all start with "- " becomes a list."""
+    out = []
+    for block in [b.strip() for b in (text or "").strip().split("\n\n") if b.strip()]:
+        rows = block.splitlines()
+        if all(r.startswith("- ") for r in rows):
+            out.append("<ul>" + "".join(f"<li>{e(r[2:])}</li>" for r in rows) + "</ul>")
+        else:
+            out.append(f"<p>{e(' '.join(rows))}</p>")
+    return "".join(out)
+
+
+def where_html(t):
+    rows = []
+    for key, label in SURFACES:
+        if not t["skills"]:
+            continue
+        s = surface_info(t, key)
+        ok = s.get("verdict") in OK
+        status = "Works" if s.get("verdict") == "works" else "Works, with notes" if ok else "Doesn't run here"
+        reasons = "".join(f"<li>{e(r)}</li>" for r in shown_reasons(s))
+        rows.append(f'<tr><th scope="row">{e(label)}</th><td><span class="state {"ok" if ok else "no"}">{e(status)}</span>'
+                    f'{f"<ul>{reasons}</ul>" if reasons else ""}</td></tr>')
+    if t.get("brief"):
+        rows.append('<tr><th scope="row">Build your own</th><td><span class="state ok">Any setup</span><ul><li>Give the brief to your own Claude.</li></ul></td></tr>')
+    return f'<table class="where">{"".join(rows)}</table>'
 
 
 def tool_page(cfg, t):
     slug, snap = t["slug"], t["snapshot"]
-    ai = snap.get("surfaces", {}).get("claude-ai", {})
-    cc = snap.get("surfaces", {}).get("claude-code", {})
+    cc = surface_info(t, "claude-code")
     needs = t.get("needs") or cc.get("needs") or []
     brief = Path(t["brief"]).name if t.get("brief") else ""
     brief_url = f"{cfg['url'].rstrip('/')}/{slug}/{brief}" if brief else ""
@@ -184,46 +249,66 @@ def tool_page(cfg, t):
         tabs.append(f'<button role="tab" id="tab-{key}" aria-controls="p-{key}" aria-selected="{"true" if first else "false"}"{"" if first else " tabindex=\"-1\""}>{e(label)}</button>')
         panels.append(f'<div class="panel" role="tabpanel" id="p-{key}" aria-labelledby="tab-{key}"{"" if first else " hidden"}><h3 class="nojs">{e(label)}</h3>{inner}</div>')
 
+    def cannot(key, label):
+        why = "".join(f"<li>{e(r)}</li>" for r in shown_reasons(surface_info(t, key)))
+        return f"<p>This one doesn't run in {e(label)}:</p><ul>{why}</ul><p>Use Claude Code, or build your own version from the brief.</p>"
+
     if t["skills"]:
-        need_line = f"<p>You'll need: {e(', '.join(needs))}.</p>" if needs else ""
-        tab("cc", "Claude Code", f"""<p>Two commands, once. Updates come with <code>claude plugin update {e(slug)}@{e(cfg['marketplace'])}</code>.</p>
+        need_line = f"<p>You'll need {e(', '.join(needs))}.</p>" if needs else ""
+        tab("cc", "Claude Code", f"""<p>Run these once in a terminal. To update later, run <code>claude plugin update {e(slug)}@{e(cfg['marketplace'])}</code>.</p>
 <pre><code>claude plugin marketplace add {e(cfg['repo'])}
 claude plugin install {e(slug)}@{e(cfg['marketplace'])}</code></pre>{need_line}
-<p class="note">On Windows without an SSH key for GitHub, set <code>CLAUDE_CODE_PLUGIN_PREFER_HTTPS=1</code> first.</p>""")
-        if ai.get("verdict") in ("works", "caveat"):
-            zips = "".join(f'<li><a href="{e(s)}.zip">{e(s)}.zip</a></li>' for s in t["skills"])
-            notes = "".join(f"<li>{e(r)}</li>" for r in ai.get("reasons", []))
-            tab("ai", "claude.ai", f"""<ol><li>Download the skill: <ul>{zips}</ul></li>
-<li>In claude.ai, open Customize, then Skills, and upload the zip.</li>
-<li>Turn on code execution in Settings if the skill has scripts.</li></ol>
-{f'<p class="note">Things to know:</p><ul class="note">{notes}</ul>' if notes else ''}""")
+<p class="note">On Windows, if you don't have an SSH key set up for GitHub, set <code>CLAUDE_CODE_PLUGIN_PREFER_HTTPS=1</code> first.</p>""")
+        co = surface_info(t, "cowork")
+        if co.get("verdict") in OK:
+            notes = "".join(f"<li>{e(r)}</li>" for r in shown_reasons(co))
+            tab("co", "Cowork", f"""<ol><li>In the Claude desktop app, open Customize, then Plugins.</li>
+<li>Choose Add marketplace and enter <code>{e(cfg['repo'])}</code>.</li>
+<li>Install <b>{e(slug)}</b>.</li></ol>
+{f'<p>Before it will run:</p><ul>{notes}</ul>' if notes else ''}""")
         else:
-            why = "".join(f"<li>{e(r)}</li>" for r in ai.get("reasons", []) if "can't run" in r) or "<li>it needs programs on your own computer</li>"
-            tab("ai", "claude.ai", f"<p>This one doesn't run on claude.ai, because:</p><ul>{why}</ul><p>Use Claude Code, or build your own version from the brief.</p>")
+            tab("co", "Cowork", cannot("cowork", "Cowork"))
+        ai = surface_info(t, "claude-ai")
+        if ai.get("verdict") in OK:
+            zips = "".join(f'<li><a href="{e(s)}.zip">{e(s)}.zip</a></li>' for s in t["skills"])
+            notes = "".join(f"<li>{e(r)}</li>" for r in shown_reasons(ai))
+            tab("ai", "Claude chat", f"""<ol><li>Download the skill: <ul>{zips}</ul></li>
+<li>In Claude on the web or desktop, open Customize, then Skills, and upload the zip.</li>
+<li>If the skill has scripts, turn on code execution in Settings.</li></ol>
+{f'<p>Things to know:</p><ul>{notes}</ul>' if notes else ''}""")
+        else:
+            tab("ai", "Claude chat", cannot("claude-ai", "Claude chat"))
     if brief:
         prompt = f"Read {brief_url} and help me build my own version of {t['title']} for my setup. Ask me what I use first."
-        tab("own", "Build your own", f"""<p>Hand the brief to your own Claude and adapt it to what you use. <a href="{e(brief)}">Read the brief</a>.</p>
+        tab("own", "Build your own", f"""<p>Give the brief to your own Claude and adapt it to what you use. <a href="{e(brief)}">Read the brief</a>.</p>
 <div class="copyrow"><pre class="prompt">{e(prompt)}</pre><button class="btn copy" type="button">Copy</button></div>
 <p class="note copied" aria-live="polite"></p>""")
     source = f"https://github.com/{cfg['repo']}/tree/main/tools/{slug}"
     exported = snap.get("exported", "")
+    art = header_svg(t)
+    media = media_html(t)
     body = f"""<section class="hero">
 <p class="eyebrow"><a href="../">All tools</a></p>
 <h1>{e(t['title'])}</h1>
 <p class="lede">{e(t['summary'])}</p>
-<div class="works">{chips_html(t)}</div>
+{tags_html(t)}
 </section>
-<section class="media">{media_html(t)}</section>
+{f'<figure class="header-art">{art}</figure>' if art else ''}
 <section class="col">
 <h2>How I use it</h2>
-{''.join(f'<p>{e(p)}</p>' for p in t.get('how_i_use_it', '').strip().split(chr(10) + chr(10)) if p)}
+{prose_html(t.get('how_i_use_it', ''))}
 <p class="prov">{f'Snapshot of {e(exported)}. ' if exported else ''}{e(t.get('endorsement', ''))}</p>
+</section>
+{f'<section class="media">{media}</section>' if media else ''}
+<section class="col">
+<h2>Where it works</h2>
+{where_html(t)}
 </section>
 <section class="col">
 <h2>Get it</h2>
 <div class="tabs" role="tablist" aria-label="Ways to get it">{''.join(tabs)}</div>
 {''.join(panels)}
-<p class="note"><a href="{e(source)}">Read the code on GitHub</a>{f' · <a href="{e(brief)}">Brief (Markdown)</a>' if brief else ''} · <a href="llms.txt">llms.txt</a></p>
+<p class="note"><a href="{e(source)}">Read the code on GitHub</a>{f' · <a href="{e(brief)}">The brief, as Markdown</a>' if brief else ''} · <a href="llms.txt">llms.txt</a></p>
 </section>"""
     return page(f"{t['title']} · {cfg['title']}", body, 1, cfg, t["summary"])
 

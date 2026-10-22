@@ -1,5 +1,5 @@
 {
-  "source_ref": "4e3d0f54d51866fb7ea3ae3c4a8fe2add9f96a21",
+  "source_ref": "f1afa0adb5689c97eb72eae3753dc24a4a49251e",
   "exported": "2026-10-23",
   "surfaces": {
     "claude-code": {
@@ -10,10 +10,16 @@
         "uv"
       ]
     },
+    "cowork": {
+      "verdict": "caveat",
+      "reasons": [
+        "needs uv installed inside Cowork's virtual machine"
+      ]
+    },
     "claude-ai": {
       "verdict": "no",
       "reasons": [
-        "needs uv, which claude.ai can't run",
+        "needs uv, which Claude chat can't run",
         "has scripts, so code execution must be on",
         "needs your own API key or settings"
       ]

@@ -64,6 +64,10 @@ CLAUDE_AI_CANNOT = {
     "gws": "the gws CLI signed in to Google", "ffmpeg": "ffmpeg", "yt-dlp": "yt-dlp",
     "uv": "uv", "playwright": "a Playwright browser", "docker": "Docker", "wrangler": "Wrangler",
 }
+# Cowork runs skills in an isolated VM: tools signed in on your own machine aren't there,
+# and other programs would have to be installed inside it.
+COWORK_CANNOT = {"gws": "the gws CLI signed in to Google", "wrangler": "Wrangler signed in to Cloudflare"}
+COWORK_INSTALL = {"uv": "uv", "ffmpeg": "ffmpeg", "yt-dlp": "yt-dlp", "playwright": "a Playwright browser"}
 SCRIPT_RUNTIME = {".py": "Python", ".js": "Node", ".mjs": "Node", ".ts": "Node"}
 # Programs worth listing as needs on any surface.
 NEEDS = {"node": "Node", "npm": "npm", "python": "Python", "python3": "Python", **CLAUDE_AI_CANNOT}
@@ -278,12 +282,14 @@ def assess(skill: str, files: dict) -> dict:
     md = files.get("SKILL.md")
     if not isinstance(md, str):
         cc.update(verdict="blocked", reasons=["no SKILL.md"])
-        return {"claude-code": cc, "claude-ai": {"verdict": "no", "reasons": ["no SKILL.md"]}}
+        no_md = {"verdict": "no", "reasons": ["no SKILL.md"]}
+        return {"claude-code": cc, "cowork": no_md, "claude-ai": no_md}
     try:
         fm, body = split_frontmatter(md)
     except yaml.YAMLError as e:
         cc.update(verdict="blocked", reasons=[f"SKILL.md frontmatter doesn't parse: {e}"])
-        return {"claude-code": cc, "claude-ai": {"verdict": "no", "reasons": cc["reasons"]}}
+        bad = {"verdict": "no", "reasons": cc["reasons"]}
+        return {"claude-code": cc, "cowork": bad, "claude-ai": bad}
 
     name, desc = str(fm.get("name", "")), str(fm.get("description", ""))
     if name != skill or not NAME_RE.match(name):
@@ -307,21 +313,36 @@ def assess(skill: str, files: dict) -> dict:
 
     no, caveat = [], []
     if len(desc) > 200:
-        caveat.append(f"description is {len(desc)} characters; claude.ai wants 200 or fewer")
+        caveat.append(f"description is {len(desc)} characters; Claude chat allows 200 at most")
     for word, label in CLAUDE_AI_CANNOT.items():
         if _mentions(text, word):
-            no.append(f"needs {label}, which claude.ai can't run")
+            no.append(f"needs {label}, which Claude chat can't run")
     scripts = [p for p in files if not p.endswith(".md") and p not in (ENV_EXAMPLE, "LICENSE")]
     if scripts:
         caveat.append("has scripts, so code execution must be on")
         code = "\n".join(files[p] for p in scripts if isinstance(files[p], str))
         if re.search(r"https?://|\bfetch\(|\brequests\.|\burllib\b|\bhttpx\b", code):
-            caveat.append("calls outside services; claude.ai's sandbox may block them")
+            caveat.append("calls outside services; Claude chat's sandbox may block them")
         if re.search(r"process\.env\.|os\.environ|getenv\(", code) or ENV_EXAMPLE in files:
             caveat.append("needs your own API key or settings")
     ai["reasons"] = no + caveat
     ai["verdict"] = "no" if no else "caveat" if caveat else "works"
-    return {"claude-code": cc, "claude-ai": ai}
+
+    # Cowork installs plugins from the same marketplace, but runs them in an isolated Linux VM:
+    # nothing installed or signed in on the user's own machine is there.
+    co_no, co_caveat = [], []
+    for word, label in COWORK_CANNOT.items():
+        if _mentions(text, word):
+            co_no.append(f"needs {label}, which Cowork's virtual machine doesn't have")
+    for word, label in COWORK_INSTALL.items():
+        if _mentions(text, word):
+            co_caveat.append(f"needs {label} installed inside Cowork's virtual machine")
+    if scripts:
+        code = "\n".join(files[p] for p in scripts if isinstance(files[p], str))
+        if re.search(r"https?://|\bfetch\(|\brequests\.|\burllib\b|\bhttpx\b", code):
+            co_caveat.append("calls outside services, so network access must be allowed for your workspace")
+    co = {"verdict": "no" if co_no else "caveat" if co_caveat else "works", "reasons": co_no + co_caveat}
+    return {"claude-code": cc, "cowork": co, "claude-ai": ai}
 
 
 # --- reading sources ----------------------------------------------------------

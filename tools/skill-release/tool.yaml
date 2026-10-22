@@ -1,8 +1,16 @@
 title: skill-release
+header: demo/header.svg
 order: 3
-summary: Checks a skill before you share it, then exports a cleaned copy one way into a public repo. Your private patterns stay outside it.
+summary: Checks a skill you want to share for private details, like machine names or your email, then copies a cleaned version into a public repo.
 how_i_use_it: |
-  This site is built with it. I keep developing my skills where they live. When I want to share one, Claude runs the check, fixes or rewrites anything private in the public copy, and commits it here. I read the diff before anything is pushed.
-endorsement: New in October 2026. I use it for every tool on this site.
+  I keep developing my skills privately and use this to publish them here. Claude checks a skill for anything private - machine names, colleagues, my email - and removes it from the public copy. The list of what to look for stays on my machine, outside the tool.
+
+  I still read every change before anything is pushed, because no list catches everything.
+endorsement: 'Oct 2026 status: new. I used it to publish each tool on this site.'
 media: []
 brief: demo/skill-release-brief.md
+surfaces:
+  cowork:
+    reasons:
+    - needs uv installed inside Cowork's virtual machine
+    - sees only the folders you connect, so connect your skill sources, your public repo and your settings folder

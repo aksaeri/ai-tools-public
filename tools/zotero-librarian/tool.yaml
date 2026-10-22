@@ -1,8 +1,13 @@
 title: zotero-librarian
+header: demo/header.svg
 order: 2
-summary: Turns a DOI, arXiv ID, URL or half-remembered title into a clean, correctly typed record in your Zotero library.
+summary: Turns a DOI, arXiv ID, link or half-remembered title into a correctly typed record in your Zotero library.
 how_i_use_it: |
-  When I find something worth citing, I paste whatever I have into Claude and say "add this to Zotero": a link, a DOI, or a title from a talk. Clean identifiers go straight through Crossref or arXiv. For a report on an organisation's website, Claude reads the page or PDF itself and fills in the right item type, authors and abstract, and asks me first if there's both a press release and the report it announces.
-endorsement: I use this most weeks. Endorsed.
+  I give Claude whatever I have - a link, a DOI, or a title someone mentioned in a talk - and say "add this to Zotero".
+
+  - DOIs and arXiv IDs go straight through the official lookups, Crossref and arXiv.
+  - For a report on a website, Claude reads the page or PDF itself and fills in the item type, authors and abstract.
+  - If there's a press release and the report it announces, Claude asks whether I want one record or both.
+endorsement: I use this whenever I add a reference.
 media: []
 brief: demo/zotero-librarian-brief.md

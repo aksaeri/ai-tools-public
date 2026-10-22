@@ -1,6 +1,6 @@
 {
   "name": "gdocs-suggest",
-  "description": "Claude comments on, copyedits and fills gaps in a Google Doc, with every word it adds in red or marked [Claude].",
+  "description": "Claude comments on, copyedits and fills gaps in a Google Doc. Everything it adds is red or marked [Claude].",
   "author": {
     "name": "Alexander Saeri"
   }

@@ -10,13 +10,20 @@
         "uv"
       ]
     },
+    "cowork": {
+      "verdict": "caveat",
+      "reasons": [
+        "needs uv installed inside Cowork's virtual machine",
+        "calls outside services, so network access must be allowed for your workspace"
+      ]
+    },
     "claude-ai": {
       "verdict": "no",
       "reasons": [
-        "needs uv, which claude.ai can't run",
-        "description is 276 characters; claude.ai wants 200 or fewer",
+        "needs uv, which Claude chat can't run",
+        "description is 276 characters; Claude chat allows 200 at most",
         "has scripts, so code execution must be on",
-        "calls outside services; claude.ai's sandbox may block them",
+        "calls outside services; Claude chat's sandbox may block them",
         "needs your own API key or settings"
       ]
     }

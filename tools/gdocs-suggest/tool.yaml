@@ -1,12 +1,17 @@
 title: gdocs-suggest
+header: demo/header.svg
 order: 1
-summary: Claude comments on, copyedits and fills gaps in a Google Doc, with every word it adds in red or marked [Claude].
+summary: Claude comments on, copyedits and fills gaps in a Google Doc. Everything it adds is red or marked [Claude].
 how_i_use_it: |
-  When a draft needs a copyedit or a review, I ask Claude to mark it up in the Doc itself. Rewrites and filled-in {TBC} markers appear in red under my original, so I can compare line by line and keep what I want. Small fixes come as normal suggestions I can accept or reject, and questions come as comments starting [Claude]. A week later I can still tell which sentences are mine.
-endorsement: I use this on most drafts I share with colleagues. Endorsed.
+  I ask Claude to review a draft in the Doc itself, not in chat. It marks its work in three ways:
+
+  - rewrites and filled-in {TBC} markers go in red under my original
+  - small fixes come as suggestions I accept or reject
+  - questions come as comments starting [Claude]
+endorsement: I use this on most drafts before colleagues see them.
 media:
-  - image: demo/before.png
-    caption: A made-up workshop summary, before.
-  - image: demo/after.png
-    caption: After one run. Suggested fixes inline, and a filled placeholder and a rewrite in red under the originals.
+- image: demo/before.png
+  caption: A made-up workshop summary, before Claude's review.
+- image: demo/after.png
+  caption: 'After one run: suggested fixes inline, and a filled-in placeholder and a rewrite in red under the originals.'
 brief: demo/gdocs-suggest-brief.md

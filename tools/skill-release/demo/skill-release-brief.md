@@ -17,7 +17,7 @@ skill source (where you keep working)
                └─▶ a person reads the diff and says yes ─▶ git push
 ```
 
-- **Settings live outside the tool.** A folder in your home directory holds `tools.yaml` (which tools, where each comes from, what to leave out, text to swap in the public copy) and `scrub.txt` (your own patterns, one regular expression per line). Neither file is ever copied anywhere, because a list of what you're hiding is itself private.
+- **Settings live outside the tool.** A folder in your home directory holds two files. `tools.yaml` says which tools to share, where each comes from, what to leave out and what text to swap in the public copy. `scrub.txt` is your own list of private details (machine names, colleagues, employers, domains), one regular expression per line. Neither file is ever copied anywhere, because a list of what you're hiding is itself private. The skill's `references/setup.md` has an example of each.
 - **Git sources export the committed version only,** never work in progress. The check says when there are uncommitted changes.
 - **Every export is a fresh copy.** The public folder is replaced, so files deleted at the source disappear from the public copy too.
 
@@ -25,9 +25,9 @@ skill source (where you keep working)
 
 Blocking:
 
-- matches from your scrub list, including in file names;
+- anything on your list of private details, including in file names;
 - email addresses, apart from no-reply and example.com addresses;
-- private IP addresses, including the range Tailscale uses;
+- private IP addresses, including 100.64.0.0/10, the range Tailscale uses;
 - strings shaped like common API keys and private keys;
 - home-folder paths with a real user name;
 - `*.ts.net` network names;
@@ -37,17 +37,17 @@ It also skips caches, virtual environments, `node_modules`, `.env` files, logs a
 
 ## Where it will run
 
-The check also reports how the skill fits each Claude surface:
+The check also reports where the skill will run:
 
 - **Claude Code, as a plugin:** blocked if the name isn't lowercase letters, digits and hyphens matching the folder, or if any file still refers to the skill's installed path (`~/.claude/skills/<name>`). A plugin installs somewhere else.
-- **claude.ai upload:** "no" if the instructions need a program its sandbox can't run (`uv`, `ffmpeg`, a signed-in CLI and so on). Otherwise there are caveats for a description over 200 characters, scripts (code execution must be on), calls to outside services, and API keys.
+- **Cowork and Claude chat:** "no" if the instructions need a program their sandbox can't run (`uv`, `ffmpeg`, a signed-in CLI and so on). Otherwise there are caveats for a description over 200 characters, scripts (code execution must be on), calls to outside services, and API keys.
 
 ## What the export changes
 
 - `~/.claude/skills/<name>/` becomes `${CLAUDE_SKILL_DIR}/`, which Claude Code substitutes in SKILL.md and in `allowed-tools`.
-- Frontmatter keys Claude Code doesn't recognise move under `metadata:`, because claude.ai rejects unknown keys.
+- Frontmatter keys Claude Code doesn't recognise move under `metadata:`. When this was written (October 2026), Claude chat's skill upload refused any key outside a short list.
 - It writes `.claude-plugin/plugin.json` with no version field, so each public commit counts as an update for people who installed it.
-- It records the source revision, the date and the fit verdicts in `snapshot.json`. A `status` command then shows which public copies are behind.
+- It records the source revision, the date and the where-it-runs results in `snapshot.json`, so the site can show them and `status` can tell which public copies are behind.
 
 ## The review step
 

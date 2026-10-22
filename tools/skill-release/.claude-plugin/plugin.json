@@ -1,6 +1,6 @@
 {
   "name": "skill-release",
-  "description": "Checks a skill before you share it, then exports a cleaned copy one way into a public repo. Your private patterns stay outside it.",
+  "description": "Checks a skill you want to share for private details, like machine names or your email, then copies a cleaned version into a public repo.",
   "author": {
     "name": "Alexander Saeri"
   }

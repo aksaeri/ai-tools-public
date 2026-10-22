@@ -1,6 +1,6 @@
 # gdocs-suggest: a brief for rebuilding it
 
-This describes a Claude Code skill that reviews and edits Google Docs so that every word Claude adds stays visibly Claude's. It describes behaviour and decisions, so you can rebuild it for your own setup. The original is one Node script (about 710 lines, plus 390 lines of tests) and a SKILL.md that tells Claude how to use it.
+This describes a Claude Code skill that reviews and edits Google Docs so that every word Claude adds stays visibly Claude's. It describes behaviour and decisions, so you can rebuild it for your own setup. The original is one Node script, with tests, and a SKILL.md that tells Claude how to use it.
 
 ## What it does
 
@@ -45,16 +45,16 @@ When a quote appears more than once and can't be lengthened (a table cell holdin
 All writes go through `documents.batchUpdate`.
 
 - **Comment:** an `insertComment` request with the quoted range and the text. Comments must open with one sentence; detail goes in a second paragraph after a blank line. The script rejects anything else, so the margin stays skimmable.
-- **Red text below:** `insertText` of a newline plus the text at the end of the paragraph, then `updateTextStyle` to set the colour to red. The same request clears bold, italic, underline, links and background, so the new text doesn't inherit them from the end of the paragraph. Font, size and spacing are never set, so the text takes the paragraph's own style. Under a heading it first sets the new paragraph to Normal text.
-- **Suggestion:** the same requests sent with `writeControl.writeMode: SUGGEST`. The script diffs `find` against `replace` word by word, strikes whole words only, merges changes one or two words apart, and sends the pieces last to first so earlier positions stay valid.
+- **Red text below:** `insertText` of a newline plus the text at the end of the paragraph, then `updateTextStyle` to set the colour to red. The same request clears bold, italic, underline, links and background, so the new text doesn't inherit them from the end of the paragraph. Font, size and spacing are never set, so the text takes the paragraph's own style. Under a heading it first sets the new paragraph to Normal text, or Claude's note would itself become a heading.
+- **Suggestion:** the same requests sent with `writeControl.writeMode: SUGGEST`. The script diffs `find` against `replace` word by word, strikes whole words only, merges changes one or two words apart, and sends the pieces from the end of the paragraph backwards, because each insertion shifts the position of everything after it.
 - **Concurrency:** every batch is pinned to the revision just read (`writeControl.requiredRevisionId`). If a collaborator edits in between, the script re-reads and rebuilds, up to three tries.
 
-Pinned comments and suggest-mode writes were marked "Developer Preview" by Google in October 2026. Check that they work on your account with a scratch doc first.
+When this was written (October 2026), Google labelled pinned comments and suggest-mode writes "Developer Preview". Check that they work on your account with a scratch doc first.
 
 ## Rules worth keeping
 
 1. Check the whole plan before writing anything. If one quote is missing or appears twice, change nothing and list what to fix.
-2. Never delete the author's text directly. Direct edits may only insert text, colour it and add comments. Deletion happens only as a suggestion, capped at 500 characters each. A safety check refuses any batch that breaks this, before it is sent.
+2. Never delete the author's text directly. Direct edits may only insert text, colour it and add comments. Deletion happens only as a suggestion, capped at 500 characters each, so one bad plan item can't strike out a whole section. A safety check refuses any batch that breaks this, before it is sent.
 3. Back up first. Copy the doc to a "backups" folder in the user's Drive, and keep a journal on disk of what the run is about to do.
 4. Verify after writing. Re-read the doc with every pending suggestion hidden (`suggestionsViewMode: PREVIEW_WITHOUT_SUGGESTIONS`) and confirm the original text is still there character for character, apart from the red paragraphs. If not, warn and stop.
 5. Make undo exact. Undo removes only this run's comments, pending suggestions and red paragraphs, and leaves collaborators' edits alone. If the connection dropped mid-run, it works out what was added from the doc itself.
