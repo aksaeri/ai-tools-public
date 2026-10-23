@@ -1,0 +1,30 @@
+# Voice Key: how it works
+
+> A personal voice-dictation system, written up so another person (or their AI assistant) can rebuild their own. An Android floating mic and a Windows tray app record speech and send it to a small transcription server; the server returns the words, punctuated and tidied, in about half a second. This file is a summary. For rebuilding, use the full brief: [voice-key-brief.md](voice-key-brief.md).
+
+## The system in brief
+
+- Clients: an Android floating mic (an accessibility service that sits beside the user's own keyboard and types into the focused field, Android 13+), a Windows tray app (global hotkey Ctrl+Shift+;, output to the clipboard, a small recording window that never takes focus), and an optional browser page.
+- Server: one endpoint, `POST /transcribe` with the raw audio as the body (`?raw=1` skips cleanup), plus `GET /healthz`. It has no login; it is reachable only over a private network, and it alone holds the API key.
+- Pipeline: save the audio to disk first; Groq Whisper (`whisper-large-v3-turbo`, no prompt) for the words; drop a whole transcript of just ".", "you" or "Thank you." (what Whisper writes for a silent clip); then a small language model (`openai/gpt-oss-20b`, low reasoning effort, room for 8,192 tokens) adds punctuation and paragraphs and removes filler, including hedging "like", "sort of" and "kind of", but never rewords. An unusable answer is retried once, then the raw text is used. Paragraphs are decided by length (one paragraph under 150 words) and tidied in code. The reply carries both the raw and the cleaned text.
+- Delivery: Android types the cleaned text at the cursor if the same field is still focused, holds it for one tap if you moved, and never types into a password field. Windows writes raw then cleaned to the clipboard and plays one chime; nothing is typed for you.
+- Needs: an always-on server your devices reach privately, Node 20+, a Groq API key; Android 13+ (sideloaded, with Android's "Allow restricted settings" step); Windows 10/11 with Python 3.10+.
+- Speed: median server time 0.55 s per phone dictation (Whisper 0.20 s, cleanup 0.33 s); upload time is extra.
+
+## Rules the design keeps
+
+1. Write the audio somewhere durable before any network call.
+2. Return the raw transcript as well as the cleaned one; if cleanup fails, return the raw one alone.
+3. Never lose a finished transcript: hold it if the field changed, keep or queue the clip if the send failed.
+4. Never put dictated text into a password field.
+5. Cleanup punctuates and removes filler; it never rewords, summarises or completes.
+6. Don't send Whisper a prompt unless you need to: it can recite it into your text.
+7. Give a reasoning model room to think, judge its answer, retry once, then fall back to the raw text.
+8. Decide layout in code where you can: the model can't hear pauses.
+9. Keep model names configurable.
+10. On Android, show the floating mic only while a keyboard is on screen; on Windows, never let the recording window take focus.
+
+## Files
+
+- [Full brief for rebuilding (Markdown)](voice-key-brief.md): what you need, components, the request and response, audio and text flows, states and recovery, the Windows queue, speed, and the cleanup prompt in full.
+- Short silent videos of the floating mic, the Windows tray app and the data flow sit beside this file in `video/`.

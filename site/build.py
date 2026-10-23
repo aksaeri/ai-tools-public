@@ -418,7 +418,8 @@ def build_site(cfg, tools, out: Path):
             shutil.copytree(t["dir"] / "demo", d)
         d.mkdir(exist_ok=True)
         (d / "index.html").write_text(tool_page(cfg, t))
-        (d / "llms.txt").write_text(llms_tool(cfg, t))
+        if not t.get("llms"):          # a tool may ship its own llms.txt in demo/ (copied above)
+            (d / "llms.txt").write_text(llms_tool(cfg, t))
         if t["snapshot"].get("surfaces", {}).get("claude-ai", {}).get("verdict") in ("works", "caveat"):
             for s in t["skills"]:
                 make_zip(t["dir"] / "skills" / s, d / f"{s}.zip")

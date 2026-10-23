@@ -35,3 +35,5 @@ media:
     narrow_video: demo/video/clip-flow-stacked.mp4
     narrow_poster: demo/video/clip-flow-stacked.jpg
     caption: Where the audio goes. The phone saves it and sends it to your server, Whisper turns it into words, a small model adds punctuation without rewording, and the text comes back. The server's part takes about half a second.
+brief: demo/voice-key-brief.md
+llms: demo/llms.txt
