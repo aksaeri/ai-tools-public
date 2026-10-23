@@ -84,7 +84,9 @@ html.js .nojs { display: none; }
 .hero > *, .col > *, .panel > *, main.wrap > * { min-width: 0; }
 
 .top .wrap { flex-wrap: wrap; }
-.top .muted::before { content: "·"; margin-right: 8px; }
+.top .sitelink { color: var(--muted); text-decoration: none; }
+.top .sitelink:hover { color: var(--accent-strong); text-decoration: underline; }
+.top .sitelink::before { content: "·"; margin-right: 8px; color: var(--muted); }
 .theme { margin-left: auto; display: flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
 .theme button { font: 500 13px var(--font); color: var(--muted); background: none; border: 0; padding: 4px 10px; cursor: pointer; }
 .theme button + button { border-left: 1px solid var(--line); }

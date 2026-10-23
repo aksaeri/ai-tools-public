@@ -147,7 +147,7 @@ def page(title, body, depth, cfg, desc=""):
 <link rel="stylesheet" href="{up}style.css">
 </head>
 <body>
-<header class="top"><div class="wrap"><a class="wordmark" href="{home}">{e(cfg['author'])}</a><span class="muted">{e(cfg['title'])}</span>{THEME_SWITCH}</div></header>
+<header class="top"><div class="wrap"><a class="wordmark" href="{home}">{e(cfg['author'])}</a><a class="sitelink" href="{home}">{e(cfg['title'])}</a>{THEME_SWITCH}</div></header>
 <main class="wrap">
 {body}
 </main>
@@ -302,17 +302,16 @@ claude plugin install {e(slug)}@{e(cfg['marketplace'])}</code></pre>{need_line}
     art = header_svg(t)
     media = media_html(t)
     body = f"""<section class="hero">
-<p class="eyebrow"><a href="../">All tools</a></p>
 <h1>{e(t['title'])}</h1>
 <p class="lede">{e(t['summary'])}</p>
 {tags_html(t)}
 </section>
-{f'<figure class="header-art">{art}</figure>' if art else ''}
 <section class="col">
 <h2>How I use it</h2>
 {prose_html(t.get('how_i_use_it', ''))}
 {f'<p class="prov">Last updated {e(updated)}</p>' if updated else ''}
 </section>
+{f'<section class="col"><h2>Visual overview</h2><figure class="header-art">{art}</figure></section>' if art else ''}
 {f'<section class="media">{media}</section>' if media else ''}
 <section class="col">
 <h2>Where it works</h2>
