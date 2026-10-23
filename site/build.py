@@ -131,7 +131,7 @@ THEME_SWITCH = """<div class="theme" role="group" aria-label="Colour theme">
 </div>"""
 
 
-def page(title, body, depth, cfg, desc=""):
+def page(title, body, depth, cfg, desc="", hero=""):
     up = "../" * depth
     home = up or "./"
     return f"""<!doctype html>
@@ -148,6 +148,7 @@ def page(title, body, depth, cfg, desc=""):
 </head>
 <body>
 <header class="top"><div class="wrap"><a class="wordmark" href="{home}">{e(cfg['author'])}</a><a class="sitelink" href="{home}">{e(cfg['title'])}</a>{THEME_SWITCH}</div></header>
+{hero}
 <main class="wrap">
 {body}
 </main>
@@ -161,7 +162,7 @@ def page(title, body, depth, cfg, desc=""):
 def index_page(cfg, tools):
     cards = []
     for t in tools:
-        art = header_svg(t)
+        art = f'<img src="{e(t["slug"])}/{e(asset(t["art"]))}" alt="" loading="lazy">' if t.get("art") else header_svg(t)
         if not art:
             poster = next((m.get("poster") or m.get("image") for m in t.get("media", []) if m.get("poster") or m.get("image")), None)
             art = f'<img src="{e(t["slug"])}/{e(asset(poster))}" alt="" loading="lazy">' if poster else ""
@@ -301,12 +302,26 @@ claude plugin install {e(slug)}@{e(cfg['marketplace'])}</code></pre>{need_line}
     updated = human_date(snap.get("source_date") or snap.get("exported", ""))
     art = header_svg(t)
     media = media_html(t)
-    body = f"""<section class="hero">
+    if t.get("art"):
+        credit = f'<p class="art-credit">Art: {e(t.get("art_title", ""))}</p>' if t.get("art_title") else ""
+        hero = f"""<!-- --art resolves against style.css at the site root, hence the tool folder in the path -->
+<section class="hero-art" style="--art: url('{e(slug)}/{e(asset(t['art']))}')">
+<div class="wrap"><div class="hero-boxes">
+<h1><span>{e(t['title'])}</span></h1>
+<p class="lede">{e(t['summary'])}</p>
+{tags_html(t)}
+</div>{credit}</div>
+</section>"""
+        top = ""
+    else:
+        hero = ""
+        top = f"""<section class="hero">
 <h1>{e(t['title'])}</h1>
 <p class="lede">{e(t['summary'])}</p>
 {tags_html(t)}
 </section>
-<section class="col">
+"""
+    body = f"""{top}<section class="col">
 <h2>How I use it</h2>
 {prose_html(t.get('how_i_use_it', ''))}
 {f'<p class="prov">Last updated {e(updated)}</p>' if updated else ''}
@@ -323,7 +338,7 @@ claude plugin install {e(slug)}@{e(cfg['marketplace'])}</code></pre>{need_line}
 {''.join(panels)}
 <p class="note"><a href="{e(source)}">Read the code on GitHub</a>{f' · <a href="{e(brief)}">The brief, as Markdown</a>' if brief else ''} · <a href="llms.txt">llms.txt</a></p>
 </section>"""
-    return page(f"{t['title']} · {cfg['title']}", body, 1, cfg, t["summary"])
+    return page(f"{t['title']} · {cfg['title']}", body, 1, cfg, t["summary"], hero)
 
 
 def llms_root(cfg, tools):

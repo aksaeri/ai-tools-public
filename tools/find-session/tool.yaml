@@ -15,3 +15,5 @@ surfaces:
     - Cowork's virtual machine can't see the sessions Claude Code saves on your computer
 media: []
 brief: demo/find-session-brief.md
+art: demo/art.webp
+art_title: Heap on a white wall

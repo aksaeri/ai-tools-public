@@ -107,3 +107,18 @@ html:not(.js) .theme { display: none; }
 .state.no { color: var(--no); }
 .hero, .col, .panel, main.wrap { grid-template-columns: minmax(0, 1fr); }
 .where li.req { color: var(--fg); }
+
+/* Hero: the tool's art full width, with the name and summary in boxes on top. */
+.hero-art { position: relative; overflow: hidden; background-color: var(--bg); border-bottom: 1px solid var(--line); }
+/* Zoomed in a little so the art's own edges (some have a pale margin) are cropped off. */
+.hero-art::before { content: ""; position: absolute; inset: -4%; background-image: var(--art); background-size: cover; background-position: center; }
+.hero-art .wrap { position: relative; z-index: 1; min-height: clamp(300px, 38vw, 460px); display: flex; align-items: flex-end; padding-block: 40px 32px; }
+.hero-boxes { display: grid; gap: 10px; justify-items: start; max-width: 640px; }
+.hero-boxes h1 { margin: 0; }
+.hero-boxes h1 span, .hero-boxes .lede, .hero-boxes .tags { background: var(--surface); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.hero-boxes h1 span { display: inline-block; padding: 6px 14px; border-radius: 6px; }
+.hero-boxes .lede { padding: 12px 14px; border-radius: 6px; }
+.hero-boxes .tags { padding: 8px 10px; border-radius: 6px; }
+.art-credit { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); bottom: 10px; margin: 0; font-size: 12px; padding: 2px 8px; border-radius: 4px; background: var(--surface); color: var(--muted); }
+@media (max-width: 520px) { .art-credit { display: none; } .hero-art .wrap { padding-block: 24px 20px; } }
+.poster img { object-position: center; transform: scale(1.06); }

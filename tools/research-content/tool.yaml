@@ -20,3 +20,5 @@ requires:
 - 'Optional: a TikHub API key (paid), to search Reddit and Twitter'
 - 'Optional: a SerpAPI key, for search results from other countries'
 - 'Optional: a Groq API key, through the transcribe skill, for videos without captions'
+art: demo/art.webp
+art_title: Doorway, cream

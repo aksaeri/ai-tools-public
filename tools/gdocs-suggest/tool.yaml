@@ -16,3 +16,5 @@ media:
 brief: demo/gdocs-suggest-brief.md
 requires:
 - A Google account, with the gws command-line tool signed in to it
+art: demo/art.webp
+art_title: Repair, light

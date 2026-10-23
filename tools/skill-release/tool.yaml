@@ -13,3 +13,5 @@ surfaces:
     - sees only the folders you connect, so connect your skill sources, your public repo and your settings folder
 requires:
 - A public git repository you can push to, such as one on GitHub
+art: demo/art.webp
+art_title: Billboard, signal

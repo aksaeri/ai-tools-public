@@ -15,3 +15,5 @@ surfaces:
     - not yet tested in Cowork, and it needs the session-start hook to read the file back
 media: []
 brief: demo/preclear-brief.md
+art: demo/art.webp
+art_title: One long stall

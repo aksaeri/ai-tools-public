@@ -13,3 +13,5 @@ media: []
 brief: demo/zotero-librarian-brief.md
 requires:
 - A Zotero account, and a Zotero API key with write access
+art: demo/art.webp
+art_title: Basket
