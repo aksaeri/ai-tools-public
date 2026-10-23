@@ -161,7 +161,7 @@ def page(title, body, depth, cfg, desc="", hero="", sec=None, scripts=()):
 <meta property="og:image:type" content="image/webp">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="AI tools: Claude skills and tools by {e(cfg['author'])}, at tools.aksaeri.com">
+<meta property="og:image:alt" content="AI tools, at tools.aksaeri.com">
 <meta name="twitter:card" content="summary_large_image">
 {THEME_BOOT}
 <link rel="preconnect" href="https://fonts.googleapis.com">

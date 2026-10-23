@@ -5,7 +5,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
 <style>
   html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
-  body { background: #FAFAF7 url(og-art.webp) center / cover no-repeat; font-family: Inter, system-ui, sans-serif; color: #1A1A1A; }
+  body { background: #12131f url(og-art.webp) center / cover no-repeat; font-family: Inter, system-ui, sans-serif; color: #1A1A1A; }
   .safe { position: absolute; left: 285px; top: 0; width: 630px; height: 630px; box-sizing: border-box; padding: 64px 40px; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 14px; }
   .box { background: #FFFFFF; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,.18); }
   h1 { margin: 0; font-size: 92px; line-height: 1; font-weight: 700; letter-spacing: -0.03em; padding: 20px 30px 24px; }
@@ -14,6 +14,11 @@
 </style></head>
 <body><div class="safe">
   <h1 class="box">AI tools</h1>
-  <p class="box">Claude skills and tools I've built, cleaned up so you can install them or build your own.</p>
   <div class="box url">tools.aksaeri.com</div>
-</div></body></html>
+</div>
+<script>
+  // ?art=<file> picks the background, for trying versions; the default is og-art.webp.
+  var a = new URLSearchParams(location.search).get("art");
+  if (a && /^[\w.-]+\.webp$/.test(a)) document.body.style.backgroundImage = "url(" + a + ")";
+</script>
+</body></html>
