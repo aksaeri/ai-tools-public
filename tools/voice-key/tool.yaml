@@ -30,6 +30,9 @@ media:
   - video: demo/video/clip-mic.mp4
     poster: demo/video/clip-mic.jpg
     caption: "On Android: tap the mic beside the keyboard, speak, tap again, and the cleaned-up text is typed in."
+  - video: demo/video/clip-win.mp4
+    poster: demo/video/clip-win.jpg
+    caption: "On Windows: press Ctrl+Shift+; to start and again to stop. A chime says the cleaned-up text is on the clipboard, ready to paste."
   - video: demo/video/clip-flow-wide.mp4
     poster: demo/video/clip-flow-wide.jpg
     narrow_video: demo/video/clip-flow-stacked.mp4
