@@ -1,9 +1,15 @@
-# Site settings. The build reads this and every <section_dir>/*/tool.yaml.
+# Site settings. The build reads this and every <section dir>/*/tool.yaml.
+# The first pages were published at /<skill>/; those addresses redirect to /skills/<skill>/.
 title: AI tools
-tagline: Skills I've found helpful, cleaned up so you can install them or build them yourself.
 author: Alexander Saeri
 url: https://tools.aksaeri.com/
 repo: aksaeri/ai-tools-public
 marketplace: aksaeri-tools
-section: Claude skills
-section_dir: skills
+tagline: Skills I've found helpful, cleaned up so you can install them or build them yourself.
+sections:
+- dir: skills
+  title: Claude skills
+  tagline: Skills I've found helpful, cleaned up so you can install them or build them yourself.
+- dir: tools
+  title: Tools I've built
+  tagline: 'Bigger things I''ve built with Claude: what each part does, how they fit together, and a brief so you can build your own.'

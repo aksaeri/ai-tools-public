@@ -5,8 +5,8 @@
 # ///
 """Build the site and the Claude Code install list from skills/*/tool.yaml.
 
-Skills live in the folder named by section_dir in site.yaml; their pages are served at
-/<section_dir>/<skill>/, and the old /<skill>/ addresses redirect there.
+Each section in site.yaml (Claude skills, tools I've built) is a folder of tools, served at
+/<dir>/<tool>/. The first skill pages were published at /<skill>/; those redirect.
 
   uv run site/build.py                 write .claude-plugin/marketplace.json and _site/
   uv run site/build.py --check         fail if marketplace.json is out of date (CI runs this)
@@ -34,16 +34,24 @@ e = html.escape
 
 def load_tools(cfg):
     tools = []
-    for d in sorted((ROOT / cfg["section_dir"]).iterdir()):
-        if not (d / "tool.yaml").exists():
-            continue
-        t = yaml.safe_load((d / "tool.yaml").read_text()) or {}
+    for sec in cfg["sections"]:
+        folder = ROOT / sec["dir"]
+        for d in sorted(folder.iterdir()) if folder.exists() else []:
+            if not (d / "tool.yaml").exists():
+                continue
+            t = yaml.safe_load((d / "tool.yaml").read_text()) or {}
+            t["sec"] = sec
+            tools.append(_load_one(t, d))
+    return sorted(tools, key=lambda t: (t.get("order", 99), t["slug"]))
+
+
+def _load_one(t, d):
+    if True:
         t["slug"] = d.name
         t["dir"] = d
         t["snapshot"] = json.loads((d / "snapshot.json").read_text()) if (d / "snapshot.json").exists() else {}
         t["skills"] = sorted(p.name for p in (d / "skills").iterdir()) if (d / "skills").exists() else []
-        tools.append(t)
-    return sorted(tools, key=lambda t: (t.get("order", 99), t["slug"]))
+    return t
 
 
 def marketplace(cfg, tools) -> str:
@@ -51,7 +59,7 @@ def marketplace(cfg, tools) -> str:
         "name": cfg["marketplace"],
         "owner": {"name": cfg["author"]},
         "metadata": {"description": cfg["tagline"]},
-        "plugins": [{"name": t["slug"], "source": f"./{cfg['section_dir']}/{t['slug']}", "description": t["summary"]}
+        "plugins": [{"name": t["slug"], "source": f"./{t['sec']['dir']}/{t['slug']}", "description": t["summary"]}
                     for t in tools if t["skills"]],
     }
     return json.dumps(data, indent=2, ensure_ascii=False) + "\n"
@@ -102,6 +110,7 @@ def surface_info(t, key):
 def available(t):
     """Labels of the routes that work for this tool, for the card and the top of its page."""
     out = [label for key, label in SURFACES if t["skills"] and surface_info(t, key).get("verdict") in OK]
+    out += [w["label"] for w in t.get("where", []) if w.get("verdict", "works") in OK and w.get("tag", True)]
     if t.get("brief"):
         out.append("Build your own")
     return out
@@ -134,7 +143,7 @@ THEME_SWITCH = """<div class="theme" role="group" aria-label="Colour theme">
 </div>"""
 
 
-def page(title, body, depth, cfg, desc="", hero=""):
+def page(title, body, depth, cfg, desc="", hero="", sec=None):
     up = "../" * depth
     home = up or "./"
     return f"""<!doctype html>
@@ -150,7 +159,7 @@ def page(title, body, depth, cfg, desc="", hero=""):
 <link rel="stylesheet" href="{up}style.css">
 </head>
 <body>
-<header class="top"><div class="wrap"><a class="wordmark" href="{home}">{e(cfg['author'])}</a><a class="sitelink" href="{home}">{e(cfg['title'])}</a><a class="sitelink" href="{home}">{e(cfg['section'])}</a>{THEME_SWITCH}</div></header>
+<header class="top"><div class="wrap"><a class="wordmark" href="{home}">{e(cfg['author'])}</a><a class="sitelink" href="{home}">{e(cfg['title'])}</a>{f'<a class="sitelink" href="{home}#{e(sec["dir"])}">{e(sec["title"])}</a>' if sec else ''}{THEME_SWITCH}</div></header>
 {hero}
 <main class="wrap">
 {body}
@@ -162,32 +171,35 @@ def page(title, body, depth, cfg, desc="", hero=""):
 """
 
 
-def index_page(cfg, tools):
-    cards = []
-    for t in tools:
-        base = f"{cfg['section_dir']}/{t['slug']}"
-        art = f'<img src="{e(base)}/{e(asset(t["art"]))}" alt="" loading="lazy">' if t.get("art") else header_svg(t)
-        if not art:
-            poster = next((m.get("poster") or m.get("image") for m in t.get("media", []) if m.get("poster") or m.get("image")), None)
-            art = f'<img src="{e(base)}/{e(asset(poster))}" alt="" loading="lazy">' if poster else ""
-        cards.append(f"""<a class="card" href="{e(base)}/">
+def card_html(t):
+    base = f"{t['sec']['dir']}/{t['slug']}"
+    art = f'<img src="{e(base)}/{e(asset(t["art"]))}" alt="" loading="lazy">' if t.get("art") else header_svg(t)
+    return f"""<a class="card" href="{e(base)}/">
   <div class="poster" aria-hidden="true">{art}</div>
   <div class="cb"><b>{e(t['title'])}</b><span>{e(t['summary'])}</span>{tags_html(t)}</div>
-</a>""")
-    body = f"""<section class="hero">
-<h1>{e(cfg['section'])}</h1>
-<p class="lede">{e(cfg['tagline'])}</p>
+</a>"""
+
+
+def index_page(cfg, tools):
+    parts = [f'<section class="hero"><h1>{e(cfg["title"])}</h1></section>']
+    for sec in cfg["sections"]:
+        mine = [t for t in tools if t["sec"] is sec]
+        if not mine:
+            continue
+        parts.append(f"""<section class="col" id="{e(sec['dir'])}">
+<h2>{e(sec['title'])}</h2>
+<p class="lede">{e(sec['tagline'])}</p>
 </section>
 <section class="cards">
-{''.join(cards)}
-</section>
-<section class="col">
+{''.join(card_html(t) for t in mine)}
+</section>""")
+    parts.append(f"""<section class="col">
 <h2>Install a skill in Claude Code</h2>
 <pre><code>claude plugin marketplace add {e(cfg['repo'])}
-claude plugin install &lt;tool&gt;@{e(cfg['marketplace'])}</code></pre>
+claude plugin install &lt;skill&gt;@{e(cfg['marketplace'])}</code></pre>
 <p class="note">In Cowork, open Customize, then Plugins, then Add marketplace, and enter <code>{e(cfg['repo'])}</code>.</p>
-</section>"""
-    return page(cfg["section"], body, 0, cfg)
+</section>""")
+    return page(cfg["title"], "\n".join(parts), 0, cfg)
 
 
 def media_html(t):
@@ -195,8 +207,16 @@ def media_html(t):
     for m in t.get("media", []):
         cap = f"<figcaption>{e(m.get('caption', ''))}</figcaption>" if m.get("caption") else ""
         if m.get("video"):
-            poster = f' poster="{e(asset(m["poster"]))}"' if m.get("poster") else ""
-            out.append(f'<figure><video controls muted playsinline preload="none"{poster}><source src="{e(asset(m["video"]))}" type="video/mp4"></video>{cap}</figure>')
+            def vid(src, poster, cls=""):
+                p = f' poster="{e(asset(poster))}"' if poster else ""
+                c = f' class="{cls}"' if cls else ""
+                return f'<video{c} controls muted playsinline loop preload="none"{p}><source src="{e(asset(src))}" type="video/mp4"></video>'
+            if m.get("narrow_video"):
+                # A stacked version for phones, where the wide layout is too small to read.
+                v = vid(m["video"], m.get("poster"), "only-wide") + vid(m["narrow_video"], m.get("narrow_poster"), "only-narrow")
+            else:
+                v = vid(m["video"], m.get("poster"))
+            out.append(f'<figure{" class=\"wide\"" if m.get("narrow_video") else ""}>{v}{cap}</figure>')
         elif m.get("image"):
             out.append(f'<figure><img src="{e(asset(m["image"]))}" alt="{e(m.get("alt") or m.get("caption", ""))}" loading="lazy">{cap}</figure>')
     return "\n".join(out)
@@ -243,6 +263,14 @@ def where_html(t):
         reasons = (requires_li(t) if ok else "") + "".join(f"<li>{e(r)}</li>" for r in shown_reasons(s))
         rows.append(f'<tr><th scope="row">{e(label)}</th><td><span class="state {"ok" if ok else "no"}">{e(status)}</span>'
                     f'{f"<ul>{reasons}</ul>" if reasons else ""}</td></tr>')
+    for w in t.get("where", []):
+        # Tools that aren't skills describe their own parts (an app, a server) in tool.yaml.
+        v = w.get("verdict", "works")
+        status = w.get("status") or ("Works" if v == "works" else "Works, with notes" if v in OK else "Not yet")
+        notes = "".join(f'<li class="req">{e(r)}</li>' for r in w.get("needs", []))
+        notes += "".join(f"<li>{e(r)}</li>" for r in w.get("notes", []))
+        rows.append(f'<tr><th scope="row">{e(w["label"])}</th><td><span class="state {"ok" if v in OK else "no"}">{e(status)}</span>'
+                    f'{f"<ul>{notes}</ul>" if notes else ""}</td></tr>')
     if t.get("brief"):
         rows.append('<tr><th scope="row">Build your own</th><td><span class="state ok">Any setup</span><ul><li>Give the brief to your own Claude.</li></ul></td></tr>')
     return f'<table class="where">{"".join(rows)}</table>'
@@ -259,7 +287,7 @@ def human_date(iso: str) -> str:
 def tool_page(cfg, t):
     slug, snap = t["slug"], t["snapshot"]
     brief = Path(t["brief"]).name if t.get("brief") else ""
-    brief_url = f"{cfg['url'].rstrip('/')}/{cfg['section_dir']}/{slug}/{brief}" if brief else ""
+    brief_url = f"{cfg['url'].rstrip('/')}/{t['sec']['dir']}/{slug}/{brief}" if brief else ""
     tabs, panels = [], []
 
     def tab(key, label, inner):
@@ -301,14 +329,14 @@ claude plugin install {e(slug)}@{e(cfg['marketplace'])}</code></pre>{need_line}
         tab("own", "Build your own", f"""<p>Give the brief to your own Claude and adapt it to what you use. <a href="{e(brief)}">Read the brief</a>.</p>
 <div class="copyrow"><pre class="prompt">{e(prompt)}</pre><button class="btn copy" type="button">Copy</button></div>
 <p class="note copied" aria-live="polite"></p>""")
-    source = f"https://github.com/{cfg['repo']}/tree/main/{cfg['section_dir']}/{slug}"
+    source = f"https://github.com/{cfg['repo']}/tree/main/{t['sec']['dir']}/{slug}"
     updated = human_date(snap.get("source_date") or snap.get("exported", ""))
     art = header_svg(t)
     media = media_html(t)
     if t.get("art"):
         credit = f'<p class="art-credit">Art: {e(t.get("art_title", ""))}</p>' if t.get("art_title") else ""
         hero = f"""<!-- --art resolves against style.css at the site root, hence the tool folder in the path -->
-<section class="hero-art" style="--art: url('{e(cfg['section_dir'])}/{e(slug)}/{e(asset(t['art']))}')">
+<section class="hero-art" style="--art: url('{e(t['sec']['dir'])}/{e(slug)}/{e(asset(t['art']))}')">
 <div class="wrap"><div class="hero-boxes">
 <h1><span>{e(t['title'])}</span></h1>
 <p class="lede">{e(t['summary'])}</p>
@@ -337,18 +365,18 @@ claude plugin install {e(slug)}@{e(cfg['marketplace'])}</code></pre>{need_line}
 </section>
 <section class="col">
 <h2>Get it</h2>
-<div class="tabs" role="tablist" aria-label="Ways to get it">{''.join(tabs)}</div>
+{f'<div class="tabs" role="tablist" aria-label="Ways to get it">{"".join(tabs)}</div>' if tabs else '<p>The brief for building your own is on its way.</p>'}
 {''.join(panels)}
-<p class="note"><a href="{e(source)}">Read the code on GitHub</a>{f' · <a href="{e(brief)}">The brief, as Markdown</a>' if brief else ''} · <a href="llms.txt">llms.txt</a></p>
+<p class="note">{" · ".join(x for x in [f'<a href="{e(source)}">Read the code on GitHub</a>' if t["skills"] or t.get("code") else "", f'<a href="{e(brief)}">The brief, as Markdown</a>' if brief else "", '<a href="llms.txt">llms.txt</a>'] if x)}</p>
 </section>"""
-    return page(f"{t['title']} · {cfg['section']}", body, 2, cfg, t["summary"], hero)
+    return page(f"{t['title']} · {cfg['title']}", body, 2, cfg, t["summary"], hero, t["sec"])
 
 
 def llms_root(cfg, tools):
-    lines = [f"# {cfg['section']}", "", f"> {cfg['tagline']} By {cfg['author']}.", "",
+    lines = [f"# {cfg['title']}", "", f"> Claude skills and tools by {cfg['author']}, cleaned up so you can install them or build your own.", "",
              f"Claude Code users can install any skill: `claude plugin marketplace add {cfg['repo']}` then `claude plugin install <tool>@{cfg['marketplace']}`.", "", "## Tools", ""]
     for t in tools:
-        lines.append(f"- [{t['title']}]({cfg['section_dir']}/{t['slug']}/llms.txt): {t['summary']}")
+        lines.append(f"- [{t['title']}]({t['sec']['dir']}/{t['slug']}/llms.txt): {t['summary']}")
     return "\n".join(lines) + "\n"
 
 
@@ -361,7 +389,7 @@ def llms_tool(cfg, t):
         lines.append(f"- [Rebuild brief (Markdown)]({brief}): how it works and how to build your own version")
     lines.append(f"- [The page](./): demo and install routes")
     if t["skills"]:
-        lines.append(f"- [Source](https://github.com/{cfg['repo']}/tree/main/{cfg['section_dir']}/{t['slug']}): the skill itself")
+        lines.append(f"- [Source](https://github.com/{cfg['repo']}/tree/main/{t['sec']['dir']}/{t['slug']}): the code")
     return "\n".join(lines) + "\n"
 
 
@@ -380,11 +408,11 @@ def build_site(cfg, tools, out: Path):
     (out / ".nojekyll").write_text("")
     (out / "index.html").write_text(index_page(cfg, tools))
     (out / "llms.txt").write_text(llms_root(cfg, tools))
-    sec = out / cfg["section_dir"]
-    sec.mkdir()
-    (sec / "index.html").write_text(redirect("../"))
+    for sec in cfg["sections"]:
+        (out / sec["dir"]).mkdir()
+        (out / sec["dir"] / "index.html").write_text(redirect(f"../#{sec['dir']}"))
     for t in tools:
-        d = sec / t["slug"]
+        d = out / t["sec"]["dir"] / t["slug"]
         if (t["dir"] / "demo").exists():
             shutil.copytree(t["dir"] / "demo", d)
         d.mkdir(exist_ok=True)
@@ -394,9 +422,10 @@ def build_site(cfg, tools, out: Path):
             for s in t["skills"]:
                 make_zip(t["dir"] / "skills" / s, d / f"{s}.zip")
         # The first pages were published at /<skill>/; keep those addresses working.
-        old = out / t["slug"]
-        old.mkdir()
-        (old / "index.html").write_text(redirect(f"../{cfg['section_dir']}/{t['slug']}/"))
+        if t["skills"]:
+            old = out / t["slug"]
+            old.mkdir()
+            (old / "index.html").write_text(redirect(f"../{t['sec']['dir']}/{t['slug']}/"))
 
 
 def main(argv=None):

@@ -1,0 +1,37 @@
+title: Voice Key
+order: 1
+summary: Dictate on your phone or PC. Tap, speak and tap again, and cleaned-up text lands where you were typing, in about half a second.
+art: demo/art.webp
+art_title: Hurried copy, cream
+how_i_use_it: |
+  I dictate most of what I write now. On my phone a small mic sits beside the keyboard in any app, so a Slack reply or a note is a tap, a sentence and a tap. On my PC a hotkey puts the cleaned-up text on the clipboard, which is how I give long instructions to Claude.
+where:
+  - label: Android phone
+    needs:
+      - Android 13 or later
+      - Installing the app yourself, with the accessibility permission
+    notes:
+      - Android's "Allow restricted settings" step is needed, and Play Protect scanning has to be off during the install.
+  - label: Windows PC
+    needs:
+      - Windows 10 or 11
+    notes:
+      - A hotkey starts and stops recording. The cleaned-up text goes on the clipboard.
+  - label: Browser
+    needs:
+      - A page served over HTTPS on your private network, so the microphone works
+  - label: Your server
+    tag: false
+    status: What it needs
+    needs:
+      - An always-on computer your phone and PC can reach privately, such as over a VPN or mesh network
+      - A Groq API key, which only the server holds
+media:
+  - video: demo/video/clip-mic.mp4
+    poster: demo/video/clip-mic.jpg
+    caption: "On Android: tap the mic beside the keyboard, speak, tap again, and the cleaned-up text is typed in."
+  - video: demo/video/clip-flow-wide.mp4
+    poster: demo/video/clip-flow-wide.jpg
+    narrow_video: demo/video/clip-flow-stacked.mp4
+    narrow_poster: demo/video/clip-flow-stacked.jpg
+    caption: Where the audio goes. The phone saves it and sends it to your server, Whisper turns it into words, a small model adds punctuation without rewording, and the text comes back. The server's part takes about half a second.
