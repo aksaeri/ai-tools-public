@@ -40,3 +40,6 @@ media:
     caption: Where the audio goes. The phone saves it and sends it to your server, Whisper turns it into words, a small model adds punctuation without rewording, and the text comes back. The server's part takes about half a second.
 brief: demo/voice-key-brief.md
 llms: demo/llms.txt
+links:
+  - label: How it works, step by step
+    href: demo/how-it-works/

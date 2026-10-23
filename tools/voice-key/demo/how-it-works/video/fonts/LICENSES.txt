@@ -1,0 +1,7 @@
+Fonts bundled here, for the videos' scene scripts:
+
+- Inter, by Rasmus Andersson: SIL Open Font License 1.1. https://github.com/rsms/inter/blob/master/LICENSE.txt
+- Schibsted Grotesk, by Schibsted: SIL Open Font License 1.1. https://github.com/schibsted/schibsted-grotesk/blob/main/OFL.txt
+- Roboto, by Google: Apache License 2.0 (newer releases: SIL Open Font License 1.1). https://github.com/googlefonts/roboto-classic
+
+The full licence texts are at those links: https://openfontlicense.org/ and https://www.apache.org/licenses/LICENSE-2.0

@@ -1,0 +1,1250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voice Key: how it works</title>
+<meta name="description" content="How the Voice Key dictation system works: where the audio goes, where the text comes from, what is saved, and why it was built this way.">
+<link rel="alternate" type="text/markdown" href="voice-key-brief.md" title="Full spec for rebuilding Voice Key (Markdown)">
+<link rel="alternate" type="text/plain" href="llms.txt" title="Summary of this page for language models">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Schibsted+Grotesk:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="video/fonts/fonts.css">
+<style>
+:root {
+  --paper: #F4F6F8;
+  --panel: #FFFFFF;
+  --ink: #1B2330;
+  --muted: #5B6675;
+  --rule: #D5DBE3;
+  --lane: #EAEEF2;
+  --audio: #2F56D3;
+  --audio-soft: #DDE5FB;
+  --text: #7B3FCF;
+  --text-soft: #ECE2FA;
+  --ctl: #A8650F;
+  --ctl-soft: #F8EAD3;
+  --code-bg: #E9EDF1;
+  --sans: "Schibsted Grotesk", system-ui, sans-serif;
+  --serif: "Source Serif 4", Georgia, serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #151A20; --panel: #1D242C; --ink: #E6EBF0; --muted: #9AA6B2; --rule: #2E3742; --lane: #1A2027;
+    --audio: #86A2FF; --audio-soft: #1F2A4A; --text: #BC93F5; --text-soft: #2C2240;
+    --ctl: #E3A740; --ctl-soft: #3A2C14; --code-bg: #232B34; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #151A20; --panel: #1D242C; --ink: #E6EBF0; --muted: #9AA6B2; --rule: #2E3742; --lane: #1A2027;
+  --audio: #86A2FF; --audio-soft: #1F2A4A; --text: #BC93F5; --text-soft: #2C2240;
+  --ctl: #E3A740; --ctl-soft: #3A2C14; --code-bg: #232B34; color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 400 1.0625rem/1.62 var(--serif);
+}
+img, svg { max-width: 100%; }
+a { color: var(--audio); }
+code, .mono { font-family: var(--mono); font-size: .86em; }
+code { background: var(--code-bg); padding: .08em .32em; border-radius: 4px; overflow-wrap: anywhere; }
+h1, h2, h3, h4 { font-family: var(--sans); line-height: 1.2; margin: 0; }
+p { margin: 0 0 1em; }
+:focus-visible { outline: 3px solid var(--audio); outline-offset: 2px; border-radius: 4px; }
+
+/* ---------- page frame ---------- */
+.wrap { max-width: 1160px; margin: 0 auto; padding: 0 16px; }
+.page { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 48px; }
+@media (min-width: 1000px) { .page { grid-template-columns: 200px minmax(0, 1fr); } }
+.rail { display: none; }
+@media (min-width: 1000px) {
+  .rail { display: block; position: sticky; top: 24px; align-self: start; padding-top: 40px; font: 500 .875rem/1.4 var(--sans); }
+  .rail nav a { display: block; color: var(--muted); text-decoration: none; padding: 6px 0; }
+  .rail nav a:hover { color: var(--ink); }
+  .rail nav a.on { color: var(--ink); }
+}
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font: 500 .8125rem/1.3 var(--sans); color: var(--muted); }
+.rail .legend { flex-direction: column; margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--rule); }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.sw { width: 22px; height: 0; border-top: 3px solid; display: inline-block; }
+.sw.audio { border-color: var(--audio); }
+.sw.text { border-color: var(--text); }
+.sw.ctl { border-color: var(--ctl); border-top-style: dashed; }
+.file-glyph { width: 14px; height: 17px; }
+
+main { min-width: 0; padding-bottom: 80px; }
+.col { max-width: 68ch; }
+
+header.top { display: flex; justify-content: space-between; align-items: center; padding: 18px 0 0; font: 500 .875rem var(--sans); color: var(--muted); }
+.theme-btn { font: inherit; color: var(--muted); background: none; border: 1px solid var(--rule); border-radius: 999px; padding: 8px 14px; min-height: 40px; cursor: pointer; }
+@media (hover: hover) { .theme-btn:hover { color: var(--ink); } }
+
+/* ---------- hero ---------- */
+.hero { padding: 40px 0 8px; }
+.hero h1 { font-size: clamp(2.1rem, 5.6vw, 3.6rem); font-weight: 700; letter-spacing: -.02em; max-width: 16ch; }
+.hero .lede { font-size: 1.2rem; line-height: 1.55; margin-top: 18px; max-width: 60ch; }
+.hero .by { font: 400 .9375rem/1.5 var(--sans); color: var(--muted); max-width: 62ch; margin-top: 4px; }
+.mobile-legend { margin: 18px 0 0; }
+@media (min-width: 1000px) { .mobile-legend { display: none; } }
+
+figure { margin: 28px 0 8px; }
+figcaption { font: 400 .875rem/1.5 var(--sans); color: var(--muted); margin-top: 10px; max-width: 70ch; }
+.schematic { background: var(--panel); border: 1px solid var(--rule); border-radius: 14px; padding: 12px; }
+.schematic svg { display: block; width: 100%; height: auto; }
+.only-wide { display: none; }
+@media (min-width: 760px) { .only-wide { display: block; } .only-narrow { display: none; } }
+
+/* SVG vocabulary shared by every diagram */
+.s-box { fill: var(--panel); stroke: var(--rule); stroke-width: 1.5; }
+.s-box-strong { fill: var(--panel); stroke: var(--ink); stroke-width: 1.5; }
+.s-zone { fill: var(--lane); stroke: none; }
+.s-t { font: 600 15px var(--sans); fill: var(--ink); }
+.s-t2 { font: 400 12.5px var(--sans); fill: var(--muted); }
+.s-tm { font: 400 11.5px var(--mono); fill: var(--muted); }
+.s-zone-label { font: 600 12.5px var(--sans); fill: var(--muted); }
+.s-audio { stroke: var(--audio); stroke-width: 3; fill: none; }
+.s-text { stroke: var(--text); stroke-width: 3; fill: none; }
+.s-ctl { stroke: var(--ctl); stroke-width: 2; fill: none; stroke-dasharray: 6 5; }
+.s-audio-fill { fill: var(--audio); }
+.s-text-fill { fill: var(--text); }
+.s-ctl-fill { fill: var(--ctl); }
+.s-lab-audio { font: 600 12px var(--sans); fill: var(--audio); }
+.s-lab-text { font: 600 12px var(--sans); fill: var(--text); }
+.s-lab-ctl { font: 600 12px var(--sans); fill: var(--ctl); }
+.s-num { font: 700 12px var(--sans); fill: var(--panel); }
+.s-file { fill: var(--panel); stroke: var(--ink); stroke-width: 1.3; }
+
+/* ---------- sections ---------- */
+section { padding-top: 64px; scroll-margin-top: 16px; }
+section > h2 { font-size: clamp(1.6rem, 3.4vw, 2.2rem); font-weight: 700; letter-spacing: -.01em; margin-bottom: 14px; }
+section h3 { font-size: 1.2rem; font-weight: 600; margin: 36px 0 10px; }
+
+/* ---------- flows: a three-track metro line beside the text ---------- */
+.flow-wrap { --lane: 42px; --lanes: calc(var(--lane) * 3); position: relative; margin-top: 20px; }
+@media (min-width: 760px) { .flow-wrap { --lane: 54px; } }
+.lanes-key { display: grid; grid-template-columns: repeat(3, var(--lane)); font: 600 .625rem/1.15 var(--sans); color: var(--muted); text-align: center; padding-bottom: 8px; }
+@media (min-width: 760px) { .lanes-key { font-size: .75rem; } }
+.lanes-key span { white-space: nowrap; }
+.flow-wrap::before {
+  content: ""; position: absolute; left: 0; width: var(--lanes); top: 26px; bottom: 0; z-index: 0;
+  background: repeating-linear-gradient(90deg, transparent 0 calc(var(--lane) / 2 - .5px), var(--rule) 0 calc(var(--lane) / 2 + .5px), transparent 0 var(--lane));
+}
+.flow-line { position: absolute; left: 0; top: 0; width: var(--lanes); height: 100%; z-index: 1; pointer-events: none; overflow: visible; }
+.flow { list-style: none; margin: 0; padding: 0; position: relative; z-index: 2; }
+.flow > li {
+  display: grid; grid-template-columns: var(--lanes) minmax(0, 1fr); column-gap: 16px;
+  padding: 16px 0; font-size: 1rem; line-height: 1.5;
+}
+.flow > li + li { border-top: 1px solid var(--rule); }
+.flow > li > .body { max-width: 64ch; }
+.lane-map { display: grid; grid-template-columns: repeat(3, var(--lane)); align-items: start; }
+.lane-map i {
+  grid-row: 1; width: 28px; height: 28px; border-radius: 50%; justify-self: center; margin-top: -2px;
+  background: var(--audio); color: var(--panel); font: 700 .8125rem/28px var(--sans); font-style: normal; text-align: center;
+  box-shadow: 0 0 0 4px var(--paper);
+}
+.flow.text .lane-map i { background: var(--text); }
+.flow h4 { font-size: 1.0625rem; font-weight: 600; margin-bottom: 2px; }
+.where { font: 500 .8125rem var(--sans); color: var(--muted); display: block; margin-bottom: 4px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font: 400 .75rem/1.3 var(--mono); background: var(--code-bg); border-radius: 6px; padding: 4px 8px; overflow-wrap: anywhere; }
+.chip svg { flex: none; }
+.plat { font: 600 .8125rem var(--sans); color: var(--muted); }
+.flow details { margin-top: 6px; }
+summary { cursor: pointer; font: 500 .875rem var(--sans); color: var(--muted); min-height: 36px; display: flex; align-items: center; }
+@media (hover: hover) { summary:hover { color: var(--ink); } }
+.flow details p, .flow details ul { font-size: .9375rem; }
+.flow details ul { margin: 0; padding-left: 1.1em; }
+
+/* ---------- state machine + recovery ---------- */
+.two { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
+@media (min-width: 900px) { .two { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: start; } }
+.outcomes { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.outcomes li { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 14px; font-size: 1rem; }
+.outcomes b { font-family: var(--sans); font-weight: 600; display: block; margin-bottom: 2px; }
+.outcomes li.ok { border-left: 4px solid var(--text); }
+.outcomes li.warn { border-left: 4px solid var(--ctl); }
+
+/* ---------- UI mockups ---------- */
+.ui-stack { display: grid; gap: 40px; margin-top: 20px; }
+.demo[data-view="video"] .explore, .demo[data-view="states"] .clip { display: none; }
+.view-switch { display: inline-flex; gap: 0; margin: 4px 0 14px; border: 1px solid var(--rule); border-radius: 999px; padding: 3px; background: var(--panel); }
+.view-switch button { font: 600 .875rem var(--sans); color: var(--muted); background: none; border: 0; border-radius: 999px; padding: 8px 16px; min-height: 38px; cursor: pointer; }
+.view-switch button[aria-selected="true"] { background: var(--ink); color: var(--paper); }
+@media (min-width: 900px) { .explore { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 0 32px; align-items: start; } .explore .tabs { grid-column: 1 / -1; } .explore .state-note { align-self: center; } }
+#demoWin .explore { grid-template-columns: minmax(0, 560px) minmax(0, 1fr); }
+.clip { margin: 0; }
+.clip video { display: block; width: 100%; height: auto; border-radius: 14px; border: 1px solid var(--rule); background: #F4F6F8; }
+.clip-wide { margin: 24px 0 8px; }
+.only-narrow-v { display: none !important; }
+@media (max-width: 759px) { .only-wide-v { display: none !important; } .only-narrow-v { display: block !important; } }
+.explore h4 { font: 600 1rem var(--sans); margin: 0 0 10px; }
+.art-phone { height: 560px; max-width: 340px; }
+.art-win { max-width: 560px; border-radius: 12px; overflow: hidden; border: 1px solid var(--rule); }
+.ui-block { padding-top: 8px; }
+.ui-block + .ui-block { border-top: 1px solid var(--rule); padding-top: 32px; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.tabs button {
+  font: 500 .875rem var(--sans); color: var(--ink); background: var(--panel); border: 1px solid var(--rule);
+  border-radius: 999px; padding: 8px 14px; min-height: 40px; cursor: pointer;
+}
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.phone { max-width: 300px; margin: 0; display: block; }
+.state-note { min-height: 6.5em; font-size: 1rem; }
+.state-note b { font-family: var(--sans); }
+#phone [data-show] { display: none; }
+#phone[data-state="ready"] [data-show~="ready"],
+#phone[data-state="offline"] [data-show~="offline"],
+#phone[data-state="checking"] [data-show~="checking"],
+#phone[data-state="recording"] [data-show~="recording"],
+#phone[data-state="sending"] [data-show~="sending"],
+#phone[data-state="recover"] [data-show~="recover"],
+#phone[data-state="menu"] [data-show~="menu"],
+#phone[data-state="nokbd"] [data-show~="nokbd"] { display: inline; }
+.spin { transform-origin: 266px 230px; animation: spin .9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.pulse { animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .15; } }
+@media (prefers-reduced-motion: reduce) { .spin, .pulse { animation: none; } }
+
+.mock-card { max-width: 520px; background: var(--panel); border: 1px solid var(--rule); border-radius: 14px; padding: 16px; }
+.mock-card svg { display: block; width: 100%; height: auto; }
+.keys-list { margin: 12px 0 0; padding-left: 1.3em; font-size: .9375rem; }
+.keys-list li { margin-bottom: 4px; }
+.icon-row { display: flex; flex-wrap: wrap; gap: 14px 22px; margin: 6px 0 16px; }
+.icon-row figure { margin: 0; text-align: center; width: 92px; }
+.icon-row svg { width: 44px; height: 44px; background: #202020; border-radius: 10px; padding: 6px; }
+.icon-row figcaption { margin-top: 6px; font-size: .8125rem; line-height: 1.3; }
+
+/* ---------- decisions ---------- */
+.decisions { list-style: none; margin: 20px 0 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
+@media (min-width: 900px) { .decisions { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 40px; } }
+.decisions li { padding: 18px 0; border-top: 1px solid var(--rule); }
+.decisions h3 { margin: 0 0 6px; font-size: 1.0625rem; }
+.decisions p { margin: 0 0 6px; font-size: 1rem; }
+.decisions .alt { color: var(--muted); font-size: .9375rem; }
+
+/* ---------- rebuild ---------- */
+pre { background: var(--code-bg); border-radius: 10px; padding: 14px 16px; overflow-x: auto; font: 400 .8125rem/1.55 var(--mono); margin: 10px 0 16px; }
+pre.wrap-pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 520px; overflow-y: auto; }
+.choice { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-top: 12px; }
+@media (min-width: 900px) { .choice { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.choice > div { background: var(--panel); border: 1px solid var(--rule); border-radius: 12px; padding: 16px; }
+.choice h4 { font-size: 1.0625rem; margin-bottom: 6px; }
+.choice ul { margin: 6px 0 0; padding-left: 1.1em; font-size: .9375rem; }
+.rules { padding-left: 1.2em; }
+.rules li { margin-bottom: 6px; }
+.brief-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.btn {
+  font: 600 .9375rem var(--sans); border-radius: 10px; padding: 12px 18px; min-height: 44px; cursor: pointer;
+  border: 1.5px solid var(--ink); background: var(--ink); color: var(--paper);
+}
+.btn.ghost { background: transparent; color: var(--ink); }
+.copied { font: 500 .875rem var(--sans); color: var(--muted); align-self: center; }
+a.btn { display: inline-flex; align-items: center; text-decoration: none; }
+.hero .llm { max-width: 62ch; margin-top: 18px; }
+.hero .llm p { font-size: .9375rem; }
+details.block { background: var(--panel); border: 1px solid var(--rule); border-radius: 12px; padding: 6px 16px; margin: 14px 0; }
+details.block summary { font-size: .9375rem; color: var(--ink); font-weight: 600; min-height: 44px; }
+footer { padding-top: 56px; font: 400 .875rem/1.5 var(--sans); color: var(--muted); }
+
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="arA" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="s-audio-fill"/></marker>
+    <marker id="arT" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="s-text-fill"/></marker>
+    <marker id="arC" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="s-ctl-fill"/></marker>
+    <marker id="arI" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker>
+    <symbol id="file" viewBox="0 0 14 17"><path d="M1 1 H9 L13 5 V16 H1 Z" class="s-file"/><path d="M9 1 V5 H13" class="s-file" fill="none"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+<header class="top">
+  <span>Voice Key</span>
+  <button class="theme-btn" id="themeBtn" type="button" aria-label="Switch light or dark theme">Theme</button>
+</header>
+
+<div class="page">
+<aside class="rail" aria-label="Contents">
+  <nav>
+    <a href="#ui">What you see</a>
+    <a href="#system">The whole system</a>
+    <a href="#audio">Where the audio goes</a>
+    <a href="#text">Where the text comes from</a>
+    <a href="#failure">When something fails</a>
+    <a href="#why">Why it's built this way</a>
+    <a href="#build">Building your own</a>
+  </nav>
+</aside>
+
+<main>
+<div class="hero">
+  <h1>Voice Key: how it works</h1>
+  <p class="lede">You tap a mic or press a hotkey, speak, and your words land where you were typing, already punctuated. This page follows one dictation from the microphone to the text field: where the audio goes, where the text comes from, what gets saved, and why each piece was built the way it was.</p>
+  <p class="by">Built in 2026 for one person's Android phone and Windows laptop. This write-up is for you, or your Claude, to build your own version that suits your setup.</p>
+  <details class="block llm" id="for-ai">
+    <summary>For AI assistants reading this page</summary>
+    <p>Voice Key is a personal dictation system. An Android floating mic (an accessibility service beside Gboard) and a Windows tray app record audio and send it to a small server. The server saves the audio, gets text from Groq's Whisper, has a small language model add punctuation and paragraphs and remove filler without rewording, and returns both versions. Android types the text into the focused field; Windows puts it on the clipboard. The server's part takes about half a second.</p>
+    <p>To rebuild it, use the full spec rather than this page: <a href="voice-key-brief.md" download>voice-key-brief.md</a> (Markdown: what you need, components, request shape, flows, states, rules and the cleanup prompt). A short summary with links is in <a href="llms.txt">llms.txt</a>.</p>
+  </details>
+</div>
+
+<!-- ============================================================ UI -->
+<section id="ui">
+  <h2>What you see</h2>
+  <div class="col">
+    <p>On Android, a small floating mic sits beside your normal keyboard, so Gboard keeps doing everything it does well and the mic adds dictation to any app. On Windows, a tray icon and a hotkey do the same job, and the text arrives on the clipboard.</p>
+  </div>
+
+  <div class="ui-stack">
+    <div class="ui-block">
+      <h3>The floating mic, on Android</h3>
+      <div class="view-switch" role="tablist" aria-label="Floating mic: video or every state" data-for="demoMic"><button role="tab" data-view="video" aria-selected="true">Video</button><button role="tab" data-view="states" aria-selected="false">Every state</button></div>
+      <div class="demo" id="demoMic" data-view="video">
+        <figure class="clip">
+          <video class="vk-clip" muted loop playsinline controls preload="none" poster="video/out/clip-mic.jpg"><source src="video/out/clip-mic.mp4" type="video/mp4"></video>
+          <figcaption>Silent: the speech bubble stands in for what's said out loud.</figcaption>
+        </figure>
+        <div class="explore">
+          <div class="tabs" role="tablist" aria-label="Floating mic states" id="phoneTabs">
+            <button role="tab" data-state="ready" aria-selected="true">Ready</button>
+            <button role="tab" data-state="offline" aria-selected="false">Offline</button>
+            <button role="tab" data-state="checking" aria-selected="false">Checking</button>
+            <button role="tab" data-state="recording" aria-selected="false">Recording</button>
+            <button role="tab" data-state="sending" aria-selected="false">Sending</button>
+            <button role="tab" data-state="recover" aria-selected="false">Something to recover</button>
+            <button role="tab" data-state="menu" aria-selected="false">Long-press</button>
+            <button role="tab" data-state="nokbd" aria-selected="false">No keyboard</button>
+          </div>
+          <div id="phoneArt" class="art-phone" role="img" aria-label="A phone running a chat app with the floating mic beside Gboard"></div>
+          <p class="state-note" id="stateNote" aria-live="polite"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="ui-block">
+      <h3>The tray app, on Windows</h3>
+      <div class="view-switch" role="tablist" aria-label="Tray app: video or every state" data-for="demoWin"><button role="tab" data-view="video" aria-selected="true">Video</button><button role="tab" data-view="states" aria-selected="false">Every state</button></div>
+      <div class="demo" id="demoWin" data-view="video">
+        <figure class="clip">
+          <video class="vk-clip" muted loop playsinline controls preload="none" poster="video/out/clip-win.jpg"><source src="video/out/clip-win.mp4" type="video/mp4"></video>
+          <figcaption>Silent: the key overlay shows the hotkey, and small speaker marks show where a sound plays.</figcaption>
+        </figure>
+        <div class="explore">
+          <div class="tabs" role="tablist" aria-label="Tray app states" id="winTabs">
+            <button role="tab" data-state="ready" aria-selected="true">Ready</button>
+            <button role="tab" data-state="recording" aria-selected="false">Recording</button>
+            <button role="tab" data-state="sending" aria-selected="false">Sending</button>
+            <button role="tab" data-state="unreachable" aria-selected="false">Server unreachable</button>
+            <button role="tab" data-state="queued" aria-selected="false">Clips waiting</button>
+            <button role="tab" data-state="menu" aria-selected="false">Tray menu</button>
+            <button role="tab" data-state="toast" aria-selected="false">Notification</button>
+          </div>
+          <div id="winArt" class="art-win" role="img" aria-label="The corner of a Windows desktop with a chat window and the Voice Key tray icon"></div>
+          <p class="state-note" id="winNote" aria-live="polite"></p>
+        </div>
+      </div>
+      <p class="col" style="font-size:.9375rem;margin-top:14px">Press Ctrl+Shift+; to start, again to stop. Sounds mark recording started and stopped, and one chime says the cleaned text is on the clipboard. While you record, a small window at the bottom of the screen shows the level and the time so far; it never takes the keyboard from the app you're typing in. Short beeps warn 15, 10 and 5 seconds before the 10-minute stop. Settings live in a JSON file opened from the tray menu.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ SYSTEM -->
+<section id="system">
+  <h2>The whole system</h2>
+  <div class="col">
+    <p>There are three ways in and one way through. The three clients are a floating mic that sits beside your usual Android keyboard (Gboard), built as an accessibility service so it can type into any app; a Windows tray app driven by a hotkey; and a plain browser page. Each one records audio and sends it to a small transcription server. (An earlier version also shipped its own Android keyboard with a mic key. It was retired in October 2026, because the floating mic beside Gboard does the job better.)</p>
+    <p>The server saves the audio, then uses <a href="https://groq.com">Groq</a>, a cloud API that runs open models such as OpenAI's Whisper very fast. Whisper turns the audio into text; a second, small language model punctuates and tidies that text; both versions go back to the client, which puts the text where you need it.</p>
+  </div>
+
+  <figure class="clip clip-wide">
+    <video class="vk-clip only-wide-v" muted loop playsinline controls preload="none" poster="video/out/clip-flow-wide.jpg"><source src="video/out/clip-flow-wide.mp4" type="video/mp4"></video>
+    <video class="vk-clip only-narrow-v" muted loop playsinline controls preload="none" poster="video/out/clip-flow-stacked.jpg"><source src="video/out/clip-flow-stacked.mp4" type="video/mp4"></video>
+    <figcaption>Left, what you do; right, where the audio and text go at that moment. Slowed down to show each step. At real speed the server’s part takes about half a second.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="schematic only-wide">
+    <svg viewBox="0 0 1040 470" role="img" aria-labelledby="sysT sysD">
+      <title id="sysT">System overview</title>
+      <desc id="sysD">Three clients send audio to a transcription server. The server saves it, sends it to Groq Whisper for text, sends the text to a cleanup model, and returns raw and cleaned text to the clients.</desc>
+      <!-- zones -->
+      <rect class="s-zone" x="10" y="10" width="250" height="330" rx="12"/>
+      <text class="s-zone-label" x="26" y="34">On your devices</text>
+      <rect class="s-zone" x="390" y="10" width="330" height="330" rx="12"/>
+      <text class="s-zone-label" x="406" y="34">Your transcription server</text>
+      <rect class="s-zone" x="800" y="10" width="230" height="330" rx="12"/>
+      <text class="s-zone-label" x="816" y="34">Groq (cloud API)</text>
+      <rect class="s-zone" x="10" y="370" width="1020" height="90" rx="12"/>
+      <text class="s-zone-label" x="26" y="394">Where the text lands</text>
+
+      <!-- clients -->
+      <g>
+        <rect class="s-box-strong" x="26" y="50" width="218" height="58" rx="9"/>
+        <text class="s-t" x="40" y="74">Floating mic</text>
+        <text class="s-t2" x="40" y="94">Android, beside Gboard</text>
+        <rect class="s-box-strong" x="26" y="140" width="218" height="58" rx="9"/>
+        <text class="s-t" x="40" y="164">Windows tray app</text>
+        <text class="s-t2" x="40" y="184">Hotkey Ctrl+Shift+;</text>
+        <rect class="s-box-strong" x="26" y="230" width="218" height="58" rx="9"/>
+        <text class="s-t" x="40" y="254">Browser page</text>
+        <text class="s-t2" x="40" y="274">Record in any browser</text>
+      </g>
+
+      <!-- audio bus -->
+      <path class="s-audio" d="M244 79 H290 M244 169 H290 M244 259 H290 M290 79 V259"/>
+      <path class="s-audio" d="M290 79 H406" marker-end="url(#arA)" id="pAudio0"/>
+      <text class="s-lab-audio" x="300" y="68">audio file</text>
+      <text class="s-t2" x="300" y="112">HTTPS POST</text>
+      <text class="s-t2" x="300" y="128">private network</text>
+
+      <!-- health check -->
+      <path class="s-ctl" d="M266 330 H404" marker-start="url(#arC)" marker-end="url(#arC)"/>
+      <text class="s-lab-ctl" x="282" y="322">GET /healthz</text>
+
+      <!-- server stages -->
+      <rect class="s-box" x="410" y="52" width="290" height="54" rx="9"/>
+      <use href="#file" x="424" y="66" width="16" height="20"/>
+      <text class="s-t" x="450" y="75">1 Save the audio</text>
+      <text class="s-t2" x="450" y="94">before anything can fail</text>
+
+      <rect class="s-box" x="410" y="122" width="290" height="54" rx="9"/>
+      <text class="s-t" x="424" y="145">2 Speech to text</text>
+      <text class="s-t2" x="424" y="164">audio out, raw words back</text>
+
+      <rect class="s-box" x="410" y="192" width="290" height="54" rx="9"/>
+      <text class="s-t" x="424" y="215">3 Clean up the words</text>
+      <text class="s-t2" x="424" y="234">punctuation, no rewording</text>
+
+      <rect class="s-box" x="410" y="262" width="290" height="54" rx="9"/>
+      <use href="#file" x="424" y="276" width="16" height="20"/>
+      <text class="s-t" x="450" y="285">4 Reply with both</text>
+      <text class="s-t2" x="450" y="304">raw + cleaned, saved as .json</text>
+
+      <!-- server internal links -->
+      <path class="s-audio" d="M555 106 V120" marker-end="url(#arA)"/>
+      <path class="s-text" d="M555 176 V190" marker-end="url(#arT)"/>
+      <path class="s-text" d="M555 246 V260" marker-end="url(#arT)"/>
+
+      <!-- groq -->
+      <rect class="s-box-strong" x="818" y="116" width="196" height="66" rx="9"/>
+      <text class="s-t" x="832" y="142">Whisper</text>
+      <text class="s-tm" x="832" y="164">whisper-large-v3-turbo</text>
+      <rect class="s-box-strong" x="818" y="186" width="196" height="66" rx="9"/>
+      <text class="s-t" x="832" y="212">Cleanup model</text>
+      <text class="s-tm" x="832" y="234">gpt-oss-20b</text>
+
+      <path class="s-audio" d="M700 141 H814" marker-end="url(#arA)" id="pAudio1"/>
+      <path class="s-text" d="M816 157 H704" marker-end="url(#arT)"/>
+      <path class="s-text" d="M700 211 H814" marker-end="url(#arT)"/>
+      <path class="s-text" d="M816 227 H704" marker-end="url(#arT)"/>
+      <text class="s-lab-audio" x="716" y="134">audio</text>
+      <text class="s-lab-text" x="716" y="174">raw text</text>
+      <text class="s-lab-text" x="716" y="204">raw + prompt</text>
+      <text class="s-lab-text" x="716" y="244">cleaned</text>
+
+      <!-- return path -->
+      <path class="s-text" d="M700 289 H760 V356 H200 V404" marker-end="url(#arT)"/>
+      <path class="s-text" d="M520 356 V404" marker-end="url(#arT)"/>
+      <path class="s-text" d="M760 356 H840 V404" marker-end="url(#arT)"/>
+      <text class="s-lab-text" x="770" y="300">{ raw, cleaned }</text>
+
+      <rect class="s-box" x="40" y="408" width="320" height="42" rx="9"/>
+      <text class="s-t" x="54" y="434">Android: typed into the focused field</text>
+      <rect class="s-box" x="380" y="408" width="290" height="42" rx="9"/>
+      <text class="s-t" x="394" y="434">Windows: clipboard, raw then cleaned</text>
+      <rect class="s-box" x="690" y="408" width="320" height="42" rx="9"/>
+      <text class="s-t" x="704" y="434">Browser: shown on the page and copied</text>
+
+      <!-- one-time pulse: audio out, text back -->
+      <g class="hero-pulse" aria-hidden="true">
+        <circle r="6" class="s-audio-fill" opacity="0">
+          <animate id="pa" attributeName="opacity" values="0;1;1;0" keyTimes="0;.05;.95;1" dur="2.2s" begin="0.8s" fill="freeze"/>
+          <animateMotion dur="2.2s" begin="0.8s" fill="freeze" path="M244 79 H290 H406 M555 106 V122 M555 141 H700 H814"/>
+        </circle>
+        <circle r="6" class="s-text-fill" opacity="0">
+          <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.04;.96;1" dur="3s" begin="pa.end" fill="freeze"/>
+          <animateMotion dur="3s" begin="pa.end" fill="freeze" path="M816 157 H704 H555 V211 H814 V227 H700 V289 H760 V356 H200 V404"/>
+        </circle>
+      </g>
+    </svg>
+    </div>
+
+    <div class="schematic only-narrow">
+    <svg viewBox="0 0 360 860" role="img" aria-labelledby="sysT2">
+      <title id="sysT2">System overview, stacked</title>
+      <rect class="s-zone" x="6" y="6" width="348" height="176" rx="12"/>
+      <text class="s-zone-label" x="18" y="28">On your devices</text>
+      <rect class="s-box-strong" x="18" y="40" width="324" height="62" rx="9"/>
+      <text class="s-t" x="30" y="64">Floating mic</text><text class="s-t2" x="30" y="84">Android, beside Gboard</text>
+      <rect class="s-box-strong" x="18" y="110" width="158" height="62" rx="9"/>
+      <text class="s-t" x="30" y="134">Windows</text><text class="s-t2" x="30" y="154">tray app</text>
+      <rect class="s-box-strong" x="184" y="110" width="158" height="62" rx="9"/>
+      <text class="s-t" x="196" y="134">Browser</text><text class="s-t2" x="196" y="154">page</text>
+
+      <path class="s-audio" d="M90 182 V236" marker-end="url(#arA)"/>
+      <text class="s-lab-audio" x="102" y="206">audio file</text>
+      <path class="s-ctl" d="M270 236 V188" marker-start="url(#arC)" marker-end="url(#arC)"/>
+      <text class="s-lab-ctl" x="260" y="216" text-anchor="end">GET /healthz</text>
+
+      <rect class="s-zone" x="6" y="240" width="348" height="330" rx="12"/>
+      <text class="s-zone-label" x="18" y="262">Your server</text>
+      <text class="s-zone-label" x="262" y="262">Groq</text>
+      <rect class="s-box" x="18" y="274" width="220" height="56" rx="9"/>
+      <use href="#file" x="30" y="290" width="16" height="20"/>
+      <text class="s-t" x="54" y="298">1 Save the audio</text>
+      <text class="s-t2" x="54" y="317">before anything can fail</text>
+      <rect class="s-box" x="18" y="350" width="220" height="56" rx="9"/>
+      <text class="s-t" x="30" y="374">2 Speech to text</text>
+      <text class="s-t2" x="30" y="393">raw words back</text>
+      <rect class="s-box" x="18" y="426" width="220" height="56" rx="9"/>
+      <text class="s-t" x="30" y="450">3 Clean up</text>
+      <text class="s-t2" x="30" y="469">punctuation, no rewording</text>
+      <rect class="s-box" x="18" y="502" width="220" height="56" rx="9"/>
+      <use href="#file" x="30" y="518" width="16" height="20"/>
+      <text class="s-t" x="54" y="526">4 Reply with both</text>
+      <text class="s-t2" x="54" y="545">raw + cleaned</text>
+      <path class="s-audio" d="M128 330 V348" marker-end="url(#arA)"/>
+      <path class="s-text" d="M128 406 V424" marker-end="url(#arT)"/>
+      <path class="s-text" d="M128 482 V500" marker-end="url(#arT)"/>
+
+      <rect class="s-box-strong" x="262" y="350" width="84" height="56" rx="9"/>
+      <text class="s-t" x="272" y="383">Whisper</text>
+      <rect class="s-box-strong" x="262" y="426" width="84" height="56" rx="9"/>
+      <text class="s-t" x="272" y="452">Cleanup</text><text class="s-t2" x="272" y="470">model</text>
+      <path class="s-audio" d="M238 370 H258" marker-end="url(#arA)"/>
+      <path class="s-text" d="M260 388 H242" marker-end="url(#arT)"/>
+      <path class="s-text" d="M238 446 H258" marker-end="url(#arT)"/>
+      <path class="s-text" d="M260 464 H242" marker-end="url(#arT)"/>
+
+      <path class="s-text" d="M128 558 V612" marker-end="url(#arT)"/>
+      <text class="s-lab-text" x="140" y="592">{ raw, cleaned }</text>
+
+      <rect class="s-zone" x="6" y="616" width="348" height="236" rx="12"/>
+      <text class="s-zone-label" x="18" y="638">Where the text lands</text>
+      <rect class="s-box" x="18" y="650" width="324" height="58" rx="9"/>
+      <text class="s-t" x="30" y="674">Android</text><text class="s-t2" x="30" y="694">typed into the focused field</text>
+      <rect class="s-box" x="18" y="716" width="324" height="58" rx="9"/>
+      <text class="s-t" x="30" y="740">Windows</text><text class="s-t2" x="30" y="760">clipboard: raw, then cleaned</text>
+      <rect class="s-box" x="18" y="782" width="324" height="58" rx="9"/>
+      <text class="s-t" x="30" y="806">Browser</text><text class="s-t2" x="30" y="826">shown on the page and copied</text>
+    </svg>
+    </div>
+    <figcaption>Blue lines carry audio and violet lines carry text. The dashed amber line is the status check every client makes so it can show whether dictation would work right now. The server runs on a machine at home and is reachable only over a private network.</figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================ AUDIO -->
+<section id="audio">
+  <h2>Where the audio goes</h2>
+  <div class="col">
+    <p>The rule running through every step: audio is written somewhere durable before the next thing that can fail. A dictation you spoke for two minutes should never be lost to a dropped connection or a provider outage.</p>
+  </div>
+  <div class="flow-wrap">
+  <div class="lanes-key" aria-hidden="true"><span>Device</span><span>Server</span><span>Groq</span></div>
+  <ol class="flow audio">
+    <li data-where="device">
+      <span class="where">On your device</span>
+      <h4>The mic records</h4>
+      You tap the mic (Android) or press the hotkey (Windows). Recording runs until you tap or press again, with a safety stop: 5 minutes on Android, 10 on Windows.
+      <details><summary>Exact settings</summary>
+        <ul>
+          <li><span class="plat">Android:</span> AAC in an .m4a file, 16 kHz, mono, 48 kbps. The floating mic records through Android's speech-recognition audio input, the only one an accessibility service is allowed to use.</li>
+          <li><span class="plat">Windows:</span> 16 kHz mono 16-bit samples, held in memory.</li>
+          <li>The floating mic's timer turns amber in the last 30 seconds before the safety stop. On Windows the recording window counts down the last 30 seconds in amber, with beeps at 15, 10 and 5 seconds.</li>
+        </ul>
+      </details>
+    </li>
+    <li data-where="device">
+      <span class="where">On your device</span>
+      <h4>The clip becomes a file</h4>
+      Android writes every recording to its own file. Windows encodes to FLAC in memory and writes to disk only if sending fails.
+      <div class="chips">
+        <span class="chip"><svg width="12" height="15"><use href="#file"/></svg>cache/clip-1759800000000.m4a</span>
+        <span class="chip"><svg width="12" height="15"><use href="#file"/></svg>%APPDATA%\voice-key-win\queue\…flac + .json</span>
+      </div>
+      <details><summary>Why one file per clip</summary>
+        <p>The first version reused one file, <code>clip.m4a</code>. During a provider outage the next recording overwrote the failed one, and the dictation was gone. Now each clip is named by its timestamp and a failed one is kept until it's retried.</p>
+      </details>
+    </li>
+    <li data-where="server">
+      <span class="where">Your server</span>
+      <h4>The file is sent</h4>
+      One HTTPS request carries the raw audio bytes. A small header says which client sent it. The query string can ask for <b>no cleanup</b> at all (<code>raw=1</code>).
+      <div class="chips"><span class="chip">POST /transcribe</span><span class="chip">Content-Type: audio/mp4 or audio/flac</span></div>
+    </li>
+    <li data-where="server">
+      <span class="where">Your server</span>
+      <h4>The server saves it first</h4>
+      Before calling anything else, the server writes the audio to disk under a fresh id. If Groq is down, the recording still exists. A setting decides how many days recordings are kept; a daily sweep deletes older ones, and 0 keeps everything.
+      <div class="chips"><span class="chip"><svg width="12" height="15"><use href="#file"/></svg>recordings/2026-10-07T08-34-29_k3x9qa.m4a</span></div>
+    </li>
+    <li data-where="groq">
+      <span class="where">Groq</span>
+      <h4>Whisper hears it</h4>
+      The server forwards the audio to Groq's speech-to-text API, in English, and gets the words back as plain text, with no punctuation rules applied yet.
+      <details><summary>Why Whisper gets no hint</summary>
+        <p>An earlier version let you say "comma" or "new paragraph" and get the mark, which meant sending Whisper a short hint to write those commands out as words. Whisper sometimes recited the hint into the transcript, especially in noisy audio, and the commands were never used, so the feature and the hint both went.</p>
+      </details>
+    </li>
+    <li data-where="device" data-break>
+      <span class="where">On your device, later</span>
+      <h4>Old clips are tidied up</h4>
+      Android keeps recent clips for a while and prunes old ones when the next recording starts. Windows only ever writes a clip to disk if sending failed, and deletes it once its text reaches the clipboard.
+      <details><summary>What is kept</summary>
+        <ul>
+          <li><span class="plat">Android:</span> the newest 2 clips, any clip waiting for a retry, and the newest 5 failed clips in the recent-dictations list.</li>
+          <li><span class="plat">Windows:</span> a queued clip stays until it succeeds; after 10 failed attempts it waits for a manual retry, and clips the server rejects outright move to a <code>failed</code> folder.</li>
+          <li><span class="plat">Server:</span> see step 4. The original keeps everything, to replay real recordings when comparing models.</li>
+        </ul>
+      </details>
+    </li>
+  </ol>
+  </div>
+</section>
+
+<!-- ============================================================ TEXT -->
+<section id="text">
+  <h2>Where the text comes from</h2>
+  <div class="col">
+    <p>Two models do two jobs, and both are quick: across recent dictations from the floating mic, Whisper took a median of 0.20 seconds and the cleanup 0.33 seconds, so the text is back about half a second after you stop, plus the upload. Whisper is fast and accurate about which words were said. A second, small language model adds punctuation and paragraphs and removes filler, under strict orders not to reword anything. Both versions travel back, so the raw words are never lost to an over-eager cleanup.</p>
+  </div>
+  <div class="flow-wrap">
+  <div class="lanes-key" aria-hidden="true"><span>Device</span><span>Server</span><span>Groq</span></div>
+  <ol class="flow text">
+    <li data-where="groq">
+      <span class="where">Groq</span>
+      <h4>Raw words come back</h4>
+      Whisper returns the transcript as one block of text: right words, little punctuation.
+      <div class="chips"><span class="chip">"so um sounds good see you at the gate at like five"</span></div>
+    </li>
+    <li data-where="server">
+      <span class="where">Your server</span>
+      <h4>Drop a silent clip</h4>
+      When the whole transcript is just ".", "you" or "Thank you.", the server returns nothing, and the client says nothing was heard. Those are what Whisper writes for an accidental tap or a silent clip. Only the whole transcript counts: "Thank you, Sam." is dictation.
+    </li>
+    <li data-where="groq">
+      <span class="where">Groq</span>
+      <h4>The cleanup pass</h4>
+      The raw text goes to a small, fast language model with a strict prompt: punctuate, capitalise, drop "um", stutters and hedging "like", "sort of" and "kind of", fix obvious mishearings. Never swap a word, paraphrase, or finish a sentence you left unfinished. Paragraphs are decided by length: under 150 words, one paragraph; above that, breaks only where the topic changes.
+      <div class="chips"><span class="chip">gpt-oss-20b, low reasoning</span><span class="chip">room for 8,192 tokens</span><span class="chip">reply wrapped in &lt;cleaned&gt;…&lt;/cleaned&gt;</span></div>
+    </li>
+    <li data-where="server">
+      <span class="where">Your server</span>
+      <h4>Reply with both versions</h4>
+      The server pulls the cleaned text out of the model's reply, tidies the layout, writes a .json record beside the audio, and answers the client. If the reply is empty, cut off, or much shorter than what Whisper heard, it asks once more; if that fails too, the raw text goes back on its own, so a dictation is never lost to the second model.
+      <div class="chips"><span class="chip"><svg width="12" height="15"><use href="#file"/></svg>recordings/2026-10-07T08-34-29_k3x9qa.json</span><span class="chip">{ id, raw, cleaned, stt_s, cleanup_s }</span></div>
+    </li>
+    <li data-where="device">
+      <span class="where">On your device</span>
+      <h4>Android types it in</h4>
+      The phone checks that you're still in the same text field, then types the cleaned text at the cursor. If the text would otherwise glue onto the previous word, a space goes in first.
+      <details><summary>If you moved, or the field is a password</summary>
+        <ul>
+          <li>If you switched fields or apps while it was transcribing, the text is <b>held</b> instead of typed into the wrong place. One tap inserts it where you are now. Held text lives in memory, so restarting the app loses it; it's also in the recent-dictations list.</li>
+          <li>A password field never receives dictated text, whether fresh or held.</li>
+          <li>Every outcome goes in a recent-dictations list (the last 10) in Settings, with Copy and Retry buttons.</li>
+        </ul>
+      </details>
+    </li>
+    <li data-where="device" data-break>
+      <span class="where">On Windows, in place of step 5</span>
+      <h4>Windows fills the clipboard</h4>
+      The app writes the raw version to the clipboard, then the cleaned version 300 ms later, and plays one chime. Ctrl+V pastes the cleaned text, and clipboard history (Win+V) usually keeps the raw one too. Clipboard history reads the clipboard a moment after each change, so a copy replaced sooner is never recorded; 150 ms was too short, and even 300 ms doesn't always catch it. Nothing is ever typed into a window for you.
+    </li>
+  </ol>
+  </div>
+</section>
+
+<!-- ============================================================ FAILURE -->
+<section id="failure">
+  <h2>When something fails</h2>
+  <div class="col">
+    <p>Each client runs the same three-state loop. What matters is the exits: every way out of "sending" ends with your words either in place or somewhere you can get them back.</p>
+  </div>
+  <div class="two">
+    <figure style="margin-top:12px">
+      <div class="schematic">
+      <svg viewBox="0 0 470 330" role="img" aria-labelledby="smT smD" style="color:var(--ink)">
+        <title id="smT">Recording state machine</title>
+        <desc id="smD">Idle goes to Recording on a tap. Recording goes to Sending on a second tap or the safety stop. Sending returns to Idle when the reply arrives. Recording can also return to Idle if the clip is too short or the keyboard closes.</desc>
+        <rect class="s-box-strong" x="20" y="120" width="110" height="56" rx="28"/>
+        <text class="s-t" x="75" y="153" text-anchor="middle">Idle</text>
+        <rect class="s-box-strong" x="165" y="20" width="120" height="56" rx="28" style="stroke:#D93025"/>
+        <text class="s-t" x="225" y="53" text-anchor="middle">Recording</text>
+        <rect class="s-box-strong" x="310" y="120" width="110" height="56" rx="28" style="stroke:var(--ctl)"/>
+        <text class="s-t" x="365" y="153" text-anchor="middle">Sending</text>
+        <path d="M95 120 Q110 60 160 50" stroke="currentColor" stroke-width="2" fill="none" marker-end="url(#arI)"/>
+        <text class="s-t2" x="72" y="74">tap</text>
+        <path d="M290 50 Q340 60 355 116" stroke="currentColor" stroke-width="2" fill="none" marker-end="url(#arI)"/>
+        <text class="s-t2" x="370" y="80">tap, or the</text>
+        <text class="s-t2" x="370" y="96">safety stop</text>
+        <path d="M310 160 H134" stroke="currentColor" stroke-width="2" fill="none" marker-end="url(#arI)"/>
+        <text class="s-t2" x="160" y="152">reply arrives</text>
+        <path d="M200 78 Q170 110 128 128" stroke="currentColor" stroke-width="1.6" stroke-dasharray="5 4" fill="none" marker-end="url(#arI)"/>
+        <text class="s-t2" x="182" y="110">too short, error,</text>
+        <text class="s-t2" x="182" y="125">keyboard closed</text>
+        <!-- exits -->
+        <path class="s-text" d="M365 176 V214 H75 V246" />
+        <path class="s-text" d="M225 214 V246"/>
+        <path class="s-text" d="M365 214 V246"/>
+        <rect class="s-box" x="20" y="250" width="110" height="64" rx="9"/>
+        <text class="s-t" x="75" y="276" text-anchor="middle">Typed in</text>
+        <text class="s-t2" x="75" y="296" text-anchor="middle">the usual case</text>
+        <rect class="s-box" x="165" y="250" width="120" height="64" rx="9" style="stroke:var(--ctl)"/>
+        <text class="s-t" x="225" y="276" text-anchor="middle">Text held</text>
+        <text class="s-t2" x="225" y="296" text-anchor="middle">field changed</text>
+        <rect class="s-box" x="310" y="250" width="110" height="64" rx="9" style="stroke:var(--ctl)"/>
+        <text class="s-t" x="365" y="276" text-anchor="middle">Clip kept</text>
+        <text class="s-t2" x="365" y="296" text-anchor="middle">send failed</text>
+      </svg>
+      </div>
+      <figcaption>Taps while sending are ignored: one dictation is in flight at a time.</figcaption>
+    </figure>
+    <ul class="outcomes">
+      <li class="ok"><b>It worked</b>The text is typed in (Android) or put on the clipboard (Windows). The clip is pruned later.</li>
+      <li class="warn"><b>You moved before it came back</b>The text is held in a single slot. Long-press the mic and choose "Insert held text".</li>
+      <li class="warn"><b>The send failed</b>The clip stays on disk and the control turns amber. Retry from the long-press menu or the recent-dictations list in Settings.</li>
+      <li class="warn"><b>Windows, server unreachable</b>The clip joins a queue on disk. The queue drains by itself, oldest first, as soon as the server answers again, and every 5 minutes while anything is waiting. The tray menu also offers "Retry N queued".</li>
+    </ul>
+  </div>
+
+  <h3>Knowing in advance whether it will work</h3>
+  <div class="col">
+    <p>Every client asks the server <code>GET /healthz</code> and shows the answer: the floating mic's outline and a slash through the Windows tray icon. The phone checks on demand, not on a timer: when the mic appears and after a failure. A good answer is trusted for 30 seconds and a failure for only 5, so the light recovers quickly when the network comes back. A successful dictation counts as a good answer too. Windows checks when you start recording and every 30 seconds.</p>
+  </div>
+</section>
+
+<!-- ============================================================ WHY -->
+<section id="why">
+  <h2>Why it's built this way</h2>
+  <div class="col"><p>Each of these came from something going wrong, or from measuring the alternatives. The grey line under each says what was tried or rejected.</p></div>
+  <ul class="decisions">
+    <li><h3>Save the audio before anything else</h3><p>The server writes the audio to disk before calling Groq, and the phone names every clip separately and keeps failed ones.</p><p class="alt">One reused clip file lost a whole dictation during a Groq outage.</p></li>
+    <li><h3>Hold the text rather than drop it</h3><p>If you change field while it's transcribing, the text waits for one tap instead of landing in the wrong place or vanishing. Password fields are the exception: dictated text never goes there.</p><p class="alt">Dropping late text lost real messages twice.</p></li>
+    <li><h3>Two models, two jobs</h3><p>Whisper gets the words right; a separate cleanup pass adds punctuation and removes filler. Both versions come back, so you can always reach the raw words.</p><p class="alt">Whisper alone punctuates unevenly and can't follow formatting commands reliably.</p></li>
+    <li><h3>The cleanup is told what it may not do</h3><p>No synonyms, no paraphrase, no finishing a sentence you left hanging. Verbatim with punctuation beats a polished rewrite when the text goes straight into a message.</p><p class="alt">An earlier, looser prompt swapped words and invented sentence endings.</p></li>
+    <li><h3>No spoken formatting, so no hint for Whisper</h3><p>Saying "comma" or "new paragraph" to get the mark needed a hint sent to Whisper. Whisper treats a hint as the transcript so far, and in noisy audio it filled gaps with the hint's own words. With the feature gone, Whisper gets no hint and can't recite one.</p><p class="alt">A check for recited hints caught most cases, but short fragments got through, and the commands were never used.</p></li>
+    <li><h3>A small, fast cleanup model, given room to think</h3><p>gpt-oss-20b at low reasoning effort cleans a typical dictation in about a third of a second. It reasons before it answers, so it gets up to 8,192 tokens; an unusable answer is retried once, then the raw text is used. The model name is a setting, because Groq retires models at short notice.</p><p class="alt">At its default effort it rewrote instead of cleaning. On the provider's default 2,048-token limit, long dictations came back empty or cut off.</p></li>
+    <li><h3>Layout is decided by length, in code</h3><p>Under 150 words (about a minute of speech) the text is one paragraph. Longer, it breaks only where the topic changes, and the server removes stray line breaks and merges paragraphs too short to stand alone.</p><p class="alt">Asking the model for breaks "where the speaker paused" gave three different layouts for similar dictations: it sees text, not audio.</p></li>
+    <li><h3>One server in the middle</h3><p>Every client goes through one server: one copy of the prompts and model names, one archive of recordings, and the API key never on a phone or laptop.</p><p class="alt">The cost is running a server. See "Building your own" for the version without one.</p></li>
+    <li><h3>A floating mic beside your own keyboard</h3><p>Since Android 13 an accessibility service can type into the focused field. That lets Gboard stay your keyboard, with swipe typing and predictions, and adds a mic beside it.</p><p class="alt">The first version replaced the whole keyboard, which meant rebuilding everything Gboard already does.</p></li>
+    <li><h3>The mic shows only while a keyboard does</h3><p>It appears when a text field has focus and a keyboard is on screen, and goes when the keyboard goes. It stays up mid-recording so you can always stop.</p><p class="alt">Following focus alone left it on screen in apps that keep a field focused with the keyboard down.</p></li>
+    <li><h3>Check the connection on demand</h3><p>The phone asks the server when the mic appears or after a failure, not on a timer. That costs no battery while you're not typing.</p><p class="alt">A polling timer was rejected for battery and network churn.</p></li>
+    <li><h3>Windows uses the clipboard and never types</h3><p>By the time the text is back, focus may have moved, and typing into the wrong window is worse than a paste. Raw then cleaned, 300 ms apart, so both usually stay in clipboard history, with one chime when the cleaned text lands.</p><p class="alt">Auto-paste was rejected; one write at a time also stops clipboard managers merging the two.</p></li>
+  </ul>
+</section>
+
+<!-- ============================================================ BUILD -->
+<section id="build">
+  <h2>Building your own</h2>
+  <div class="col">
+    <p>The parts that matter are small: one request shape, two model calls, one prompt, and a handful of rules about never losing words. Everything else (the floating mic, the tray app, the browser page) is a client that records audio and puts text somewhere.</p>
+    <h3>The one request</h3>
+  </div>
+<pre># raw=1 skips cleanup
+# clients hold a base URL and call &lt;base&gt;/transcribe
+POST /transcribe
+# or audio/flac, audio/webm …
+Content-Type: audio/mp4
+# URL-encoded JSON naming the client
+X-Device-Info: {"label":"phone mic"}
+&lt;body: the raw audio bytes&gt;
+
+200 OK
+{ "id": "2026-10-07T08-34-29_k3x9qa",
+  "raw": "so um sounds good see you at the gate at like five",
+  "cleaned": "So, sounds good, see you at the gate at five.",
+  "stt_s": 0.21, "cleanup_s": 0.34 }
+
+error → { "error": "stt: …" } with the provider's HTTP status
+GET /healthz → { "ok": true }     # the server is up; Groq is not checked</pre>
+
+  <div class="col"><h3>Server or no server</h3>
+  <p>The original runs a small Node server on a machine at home. For one person, calling Groq straight from each app with your own API key also works. Groq has a free tier; check its current limits.</p></div>
+  <div class="choice">
+    <div>
+      <h4>Keep a small server (as built)</h4>
+      <ul>
+        <li>One place to change the prompt or model; clients never need updating for it.</li>
+        <li>The API key stays on the server.</li>
+        <li>You get an archive of recordings for testing changes.</li>
+        <li>You need a machine that's always on and reachable from your devices.</li>
+        <li>The server has no login of its own; the original is reachable only over a private network. Don't expose it to the internet as is.</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Call Groq from each app</h4>
+      <ul>
+        <li>Each app makes the two calls itself: speech to text, then cleanup.</li>
+        <li>Nothing to host; your key lives in each app's settings.</li>
+        <li>A prompt or model change means updating every app.</li>
+        <li>Saving audio first still applies: keep the clip on the device until the text is back.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="col">
+    <h3>Rules worth keeping, whatever you build</h3>
+    <ol class="rules">
+      <li>Write the audio somewhere durable before any network call.</li>
+      <li>Return the raw transcript as well as the cleaned one; if cleanup fails, return the raw one alone.</li>
+      <li>Never lose a finished transcript: hold it if the field changed, queue the clip if the send failed.</li>
+      <li>Never put dictated text into a password field.</li>
+      <li>Cleanup punctuates and removes filler; it never rewords, summarises or completes.</li>
+      <li>Don't send Whisper a prompt unless you need to: it can recite it into your text.</li>
+      <li>Give a reasoning model room to think, judge its answer, retry once, then fall back to the raw text.</li>
+      <li>Decide layout in code where you can: the model can't hear pauses.</li>
+      <li>Keep model names in settings, not code.</li>
+      <li>On Android, show a floating mic only while a keyboard is on screen. On Windows, never let the recording window take focus.</li>
+    </ol>
+  </div>
+
+  <details class="block"><summary>The full cleanup prompt</summary>
+    <p style="font-size:.9375rem"><code>{{input}}</code> is replaced by the raw transcript and <code>{{paragraphs}}</code> by one of the two rules below, chosen by word count. The model's reply is read from between the <code>&lt;cleaned&gt;</code> tags. Model: <code>openai/gpt-oss-20b</code>, <code>reasoning_effort: low</code>, temperature 0.2, <code>max_completion_tokens: 8192</code>.</p>
+<pre class="wrap-pre">You are cleaning up a raw speech-to-text transcript so the speaker can paste it directly into a chat thread. The output will be auto-copied to the clipboard, so the speaker may not re-read carefully.
+
+Make ONLY these changes:
+1. Add punctuation (commas, periods, question marks). {{paragraphs}}
+2. Capitalize sentence starts and proper nouns.
+3. Remove pure filler, and nothing else: &quot;um&quot;, &quot;uh&quot;, false-start stutters (&quot;the the&quot;, &quot;I I&quot;), and these verbal tics:
+   - &quot;like&quot; used as a pause or hedge: &quot;it&#x27;s like a big problem&quot; → &quot;it&#x27;s a big problem&quot;; &quot;we could like move it&quot; → &quot;we could move it&quot;. Keep &quot;like&quot; when it means similar to, such as, enjoy or want: &quot;feels like&quot;, &quot;looks like&quot;, &quot;something like&quot;, &quot;things like taxes&quot;, &quot;I&#x27;d like&quot;.
+   - &quot;sort of&quot; and &quot;kind of&quot; used as hedges before a verb, adjective or phrase: &quot;we can kind of talk about it&quot; → &quot;we can talk about it&quot;; &quot;it&#x27;s sort of too bouncy&quot; → &quot;it&#x27;s too bouncy&quot;. Keep them when they mean a type of: &quot;some kind of widget&quot;, &quot;a sort of homebrew version&quot;, &quot;this kind of thing&quot;.
+   - &quot;you know&quot; and &quot;I mean&quot; when meaningless.
+   Delete only the tic itself and fix the punctuation around it; never rephrase the sentence to absorb it. Every other word stays, including &quot;maybe&quot;, &quot;just&quot;, &quot;so&quot;, &quot;and&quot;, &quot;actually&quot;, &quot;I guess&quot;, &quot;I think&quot; and sentence-opening &quot;And&quot; or &quot;So&quot;: they are how the speaker talks, not filler. If deleting a tic would leave the sentence ungrammatical, keep the tic.
+4. Fix obvious Whisper transcription slips where the correction is unambiguous from immediate context (e.g. &quot;rank is the just a list&quot; → &quot;rank is just a list&quot;, duplicated words, mis-split words, a contraction missing its ending such as &quot;they don control&quot; → &quot;they don&#x27;t control&quot; or &quot;that true&quot; → &quot;that&#x27;s true&quot;). Only fix if you are highly confident.
+
+Do NOT:
+- Swap any word for a synonym, even if the synonym seems more natural.
+- Paraphrase, summarize, condense, or smooth out the speaker&#x27;s phrasing.
+- Complete a sentence the speaker did not finish. If the transcript ends mid-thought, leave it mid-thought — even by a single word. Example: raw ends &quot;I will leave it as your final&quot; → output ends &quot;I will leave it as your final&quot; (NOT &quot;your final decision&quot; or &quot;your final call&quot;). The truncation is the speaker&#x27;s actual state and must be preserved.
+- Reinterpret a phrase even if it sounds odd. If unsure, leave it as-is.
+- Add information, examples, or clarifications the speaker did not say.
+
+If you are uncertain whether a change is safe, do not make it. The speaker prefers verbatim with punctuation over a polished rewrite.
+
+&lt;transcript&gt;
+{{input}}
+&lt;/transcript&gt;
+
+Return your result in this exact format:
+&lt;cleaned&gt;
+[cleaned transcript here]
+&lt;/cleaned&gt;</pre>
+    <p style="font-size:.9375rem">Under 150 words:</p>
+<pre class="wrap-pre">Return a single paragraph: no line breaks at all.</pre>
+    <p style="font-size:.9375rem">At 150 words or more:</p>
+<pre class="wrap-pre">Split the text into paragraphs where the topic changes, with one blank line between paragraphs. Paragraphs run to about 80-150 words each, so a 300-word transcript usually has 2 or 3 and an 800-word one about 6. Never put each sentence on its own line, and never end a line with spaces.</pre>
+  </details>
+
+  <div class="col">
+    <h3>Hand it to Claude</h3>
+    <p>The brief has everything on this page in a form Claude can work from: what you need, components, flows, the request shape, the rules, and the cleanup prompt. Copy it into a new conversation along with what you have (which phone, which computer, whether you want a server) and ask for a plan. The clients described here are Android and Windows; an iPhone or Mac version would need a different approach on the device side, though the server and prompts carry over.</p>
+  </div>
+  <div class="brief-actions">
+    <button class="btn" type="button" id="copyBrief">Copy brief for Claude</button>
+    <a class="btn ghost" href="voice-key-brief.md" download="voice-key-brief.md">Download as Markdown</a>
+    <span class="copied" id="copyMsg" aria-live="polite"></span>
+  </div>
+</section>
+
+<footer>Written in October 2026 from the source code of the Android app (v1.7), the Windows tray app and the transcription server, and updated on 23 October. Numbers such as timeouts and clip counts are the values in that code.</footer>
+</main>
+</div>
+</div>
+
+<script type="text/markdown" id="brief">
+# Voice Key: a brief for rebuilding it
+
+This describes a personal voice-dictation system so it can be rebuilt from scratch to suit a different setup. It describes behaviour and decisions, not code. Where a number is given (timeouts, clip counts, sample rates), it is the value the original uses; treat it as a sensible default, not a requirement.
+
+## What it does
+
+You tap a mic (Android) or press a hotkey (Windows), speak, and stop. The audio is transcribed by Whisper, cleaned up by a small language model (punctuation, paragraphs and filler removal, never rewording), and the text lands where you were typing: typed into the focused field on Android, or put on the clipboard on Windows.
+
+## What you need
+
+- **A server** that is always on and that your phone and computer can reach privately (a VPN or a mesh network), running Node 20 or later.
+- **A Groq API key.** Groq runs both models. Only the server holds the key.
+- **Android 13 or later** for the floating mic, installed from outside the Play Store. Android asks you to "Allow restricted settings" before an accessibility service can be turned on, and Play Protect's app scanning may need to be off while you install.
+- **Windows 10 or 11 with Python 3.10 or later** for the tray app.
+- **Any modern browser** for the optional web page, served over HTTPS so the browser allows the microphone.
+
+## Components
+
+1. **Transcription server** (the original is about 370 lines of Node/Express, listening on 127.0.0.1). Endpoints: `POST /transcribe`, `GET /healthz` (server liveness only; Groq is not checked). It holds the Groq API key, saves the audio and a JSON record per dictation, and calls Groq at least twice. **It has no authentication**: it is reachable only over a private network, behind a reverse proxy that maps a path prefix to it and strips the prefix. Clients are configured with a base URL and call `<base>/transcribe`. Add authentication before exposing anything like this publicly.
+2. **Android floating mic** (an AccessibilityService, Android 13+). A small disc beside any other keyboard (Gboard, say). It types into the focused field through the accessibility input connection (`FLAG_INPUT_METHOD_EDITOR`, `InputMethod.AccessibilityInputConnection.commitText`). An earlier version replaced the keyboard entirely; that was retired because a mic beside the user's own keyboard does the job better.
+3. **Windows tray app** (Python: sounddevice, soundfile, pystray, pywin32, tkinter).
+   - **Hotkey and icon.** A global hotkey `Ctrl+Shift+;` (RegisterHotKey) toggles start and stop. The tray icon shows the state: grey ready, red recording, amber sending, a slash when the server is unreachable, a red badge when clips are queued.
+   - **Recording window.** A small strip at the bottom centre of the screen, shown only while recording or sending: a calm five-segment level meter, the time so far, and in the last 30 seconds the time left in amber, then "Sending…". It must never take keyboard focus, because you paste into the app you were dictating into, so it is shown and hidden through Win32 with no-activate flags rather than through the GUI toolkit.
+   - **Sounds.** Recording started, recording stopped, one chime when the final text is on the clipboard, and short beeps at 15, 10 and 5 seconds before the safety stop. A notification previews the text.
+   - **Settings** live in `%APPDATA%\voice-key-win\config.json`: endpoint, hotkey, device name (stored by name, since device indices renumber), sounds, notifications, recording window, max recording seconds (600), health poll seconds (30), request timeout seconds (120), queue max attempts (10), and the clipboard gap (0.3 s). When a default changes in a new version, a saved value equal to the old default moves to the new one, because the file holds every key and would otherwise pin the old value forever.
+   - **Tray menu:** the status line, Microphone, Retry N queued, Open log, Open config, the Sounds, Notifications and Recording window toggles, and Quit.
+4. **Browser page** (optional). Records with MediaRecorder, shows the cleaned text with the raw text expandable, and copies it.
+
+Android Settings (shared preferences): server base URL, cleanup on/off (off sends `raw=1`), microphone choice (applied with `setPreferredDevice`), floating mic on/off, and the floating mic's docked edge and height. Settings also shows the recent-dictations list, stored in `filesDir/dictations.tsv` (last 10, survives restarts), and a status log in `filesDir/status-log.tsv` (last 50, with full error detail). Held text lives only in memory and is lost if the app process restarts.
+
+## The request
+
+```
+POST /transcribe[?raw=1]
+Content-Type: audio/mp4 | audio/flac | audio/webm | audio/ogg
+X-Device-Info: <URL-encoded JSON, e.g. {"label":"phone mic"}>
+body: raw audio bytes (limit 50 MB)
+
+200 → { "id", "raw", "cleaned", "fmt", "bytes", "stt_s", "cleanup_s", "cleanup_warning" }
+error → { "error": "<message>" } with the upstream HTTP status (400 for an empty body)
+GET /healthz → { "ok": true }
+```
+
+- `raw=1` skips cleanup; `cleaned` then equals `raw`.
+- The client uses `cleaned`, falling back to `raw`.
+- `fmt=1` asks for spoken formatting ("comma", "new paragraph" said aloud). The original has it switched off on the server, and ignores the flag, because its user never dictated punctuation and the feature cost more than it gave (see "Spoken formatting, and why it's off").
+
+## Audio flow
+
+1. **Record.**
+   - Android: MediaRecorder, MPEG-4/AAC, 16 kHz, mono, 48 kbps, to `cacheDir/clip-<epoch ms>.m4a`. The accessibility service must use the `VOICE_RECOGNITION` source, the only one Android lets an accessibility service capture. Statuses shown: "Nothing recorded" (under 1000 bytes), "Recording too short" (MediaRecorder stop failed), and a retry prompt for any failed send.
+   - Windows: 16 kHz mono int16 in memory, encoded to FLAC in memory (lossless, and faster end to end than WAV).
+   - Safety stop: 5 minutes on Android, where the timer turns amber in the last 30 seconds; 10 minutes on Windows, with the warning beeps and the countdown in the recording window.
+2. **Send.** One POST with the audio as the body. Android timeouts: 10 s to connect, 120 s to read.
+3. **Server saves first.** It mints an id (`<ISO timestamp to the second>_<6 random chars>`) and writes `recordings/<id>.<ext>` before calling anything that can fail.
+4. **Speech to text.** Groq `/openai/v1/audio/transcriptions`, model `whisper-large-v3-turbo`, `language=en`, no prompt.
+5. **Tidy up later, never on success.**
+   - Android prunes when the next recording starts. It keeps the newest 2 clips, any clip armed for retry, and the newest 5 failed clips in the history.
+   - Windows writes a clip to disk only if the send fails (`%APPDATA%\voice-key-win\queue\<stamp>.flac` plus a `.json` with attempts and the last error). It deletes the clip only after the cleaned text reaches the clipboard.
+   - The server keeps audio and JSON for N days (the original keeps everything, as a test set for prompt changes).
+
+## Text flow
+
+1. **Whisper returns raw text.**
+2. **Near-silence check.** If the whole transcript, ignoring case and punctuation, is empty punctuation, "you", "thank you", "thanks for watching" or "thank you for watching", return empty raw and cleaned, so the client takes its "nothing heard" path. These are what Whisper writes for an accidental tap or a silent clip: 15 of 656 clips in the original, none of them real speech. Match the whole transcript only ("Thank you, Sam." is dictation). Groq's `no_speech_prob` was 0 for all of them, and loudness overlapped real one-word dictations, so the text is the only usable signal. Keep what Whisper said in the JSON record.
+3. **Cleanup.** Groq `/openai/v1/chat/completions`, model `openai/gpt-oss-20b`, `reasoning_effort: "low"`, temperature 0.2, `max_completion_tokens: 8192`, with the prompt below as a single user message.
+   - **Effort.** At the model's default effort it rewrote instead of cleaning.
+   - **Room to think.** gpt-oss reasons before it answers, and on Groq's default cap of 2,048 tokens the reasoning sometimes used up the whole allowance. The answer then came back empty, or cut off mid-sentence after about 1,700 words. A typical dictation uses about 400 tokens.
+   - **Paragraphs are decided by length, not by the model.** Under 150 words (about a minute of speech) the prompt asks for one paragraph. At 150 or more it asks for breaks where the topic changes, in paragraphs of about 80–150 words. An earlier rule ("paragraph breaks where the speaker clearly paused") produced three different layouts for similar dictations, because the model sees text, not audio.
+4. **Judge the answer, retry once, then fall back.**
+   - **Unusable answers.** An answer is unusable if the model ran out of room (`finish_reason: "length"`), if it came back empty, or if it kept fewer than 60% of the words Whisper heard (on 40 or more words). The filler rule never took a test clip below 88%.
+   - **Text inside the tags.** Take the text between `<cleaned>` tags. With no closing tag, strip any stray tag and use the rest.
+   - **Retry, then raw.** If the answer is unusable, call once more. If that fails too, return Whisper's raw text as `cleaned`, with a warning. The user never gets nothing, or half of what they said.
+5. **Tidy the layout in code.** Remove trailing spaces at line ends (the model sometimes uses Markdown's two-space line break). A dictation under 150 words becomes one paragraph. In a longer one, a lone line break becomes a space, and a paragraph under 40 words joins the next, so a paragraph per sentence cannot survive. Replace Unicode hyphens (U+2010, U+2011) with plain ones.
+6. **Server records** `recordings/<id>.json` with: id, timestamp, content type, bytes, user agent, device label, raw, cleaned, fmt and whether the client asked for it, both model names, both timings, and any cleanup warning or near-silence drop. A failure records `error` and `http_status` instead.
+7. **Deliver.**
+   - Android: if the focused field is the same one that was focused when recording stopped, commit the text at the cursor. First add a space if the character before the cursor isn't whitespace. Track "same field" with an epoch counter that increments on every non-restarting `onStartInput` and on `onFinishInput`.
+   - Windows: put raw on the clipboard, wait 300 ms, then put cleaned, and play the one "ready" chime. Skip raw if it's identical. The user pastes cleaned with Ctrl+V. Raw is meant to sit one step back in clipboard history (Win+V), which reads the clipboard a moment after each change, so a copy replaced too soon is never recorded. 150 ms was too short. Even at 300 ms the history doesn't always keep both, and the original's user decided that was fine. Never type into a window, and never touch the clipboard for an empty transcript.
+
+## States and recovery
+
+States: `IDLE → RECORDING` (tap) `→ TRANSCRIBING` (tap, or the safety stop) `→ IDLE` (reply, error or cancel). Taps during TRANSCRIBING are ignored; one dictation is in flight at a time.
+
+Exits from TRANSCRIBING:
+- **Delivered.** The text is typed in or on the clipboard.
+- **Held.** The field changed, or no field is focused. Keep the text in a one-slot recovery and insert it on request into whatever field is focused then. The password check applies both at delivery (a password field drops the text) and at insert time (it won't insert into one).
+- **Failed.** Keep the clip on disk and arm a retry. Retry reuses the same file.
+
+Recovery handles:
+- Floating mic: an amber outline. A tap always starts a new recording (so a tap never changes meaning). A long-press opens a menu: Insert held text / Retry failed send / Settings.
+- Settings: a list of the last 10 dictations (sent, held, failed) with Copy, and Retry for failed clips.
+
+Windows queue:
+- Every failed send is queued.
+- The queue drains oldest first: when the server becomes reachable again, every 5 minutes while entries exist, or from the tray menu.
+- A drain stops on the first retryable failure (no status, ≥500, 408, 429).
+- Other 4xx responses move the clip to `queue/failed/`.
+- A clip waits for a manual retry after 10 attempts.
+
+## Speed
+
+Median server time per dictation in the original, from its own records (upload time is extra and not recorded):
+- **Phone:** 0.55 s, made up of 0.20 s for Whisper and 0.33 s for cleanup. The typical phone dictation is about 40 words.
+- **Windows:** 0.99 s. Windows dictations run longer, about 125 words; under 60 words it's 0.63 s.
+
+Cleanup time grows with length, because the model reasons in proportion to how much there is to judge. The filler rule roughly doubled it on long clips, to about 2 s for 300 or more words. Groq is what makes this fast; a slower provider changes how the whole thing feels.
+
+## Connection status
+
+- `GET /healthz` with a 3 s timeout.
+- Android checks on demand, not on a timer: when the mic appears and after a failed send. It caches a good result for 30 s and a failure for 5 s. A successful dictation counts as a good result.
+- Windows does a 1 s preflight at recording start (it plays an error sound but keeps recording) and polls every 30 s.
+- Display:
+  - Floating mic outline: solid green when OK, red with a 60° gap at the bottom when unreachable, thin grey while checking.
+  - Windows tray icon: a slash through it when unreachable.
+
+## The floating mic (Android)
+
+- **Visibility.** Show it only when all of these hold:
+  - the floating mic is enabled;
+  - a field is focused (the accessibility `InputMethod`'s `onStartInput`/`onFinishInput`);
+  - it's not a password field;
+  - a keyboard window is on screen (`getWindows()` contains `AccessibilityWindowInfo.TYPE_INPUT_METHOD`, which needs `canRetrieveWindowContent` plus `flagRetrieveInteractiveWindows`; re-check on `TYPE_WINDOWS_CHANGED`).
+
+  Exception: keep it showing while recording or sending, so the user can always stop.
+- **Look.**
+  - A 46 dp dark disc with a white mic, docked to a screen edge and draggable (it snaps to the nearer edge).
+  - While recording it grows inward into a 132 dp pill with an elapsed timer, a 2.25 s level waveform, and a red stop disc under the thumb.
+  - While sending, the outline spins.
+  - An overlay window of `TYPE_ACCESSIBILITY_OVERLAY`, never focusable (focus would dismiss the keyboard).
+- **Statuses** show as toasts, since the disc has no text slot.
+
+## Spoken formatting, and why it's off
+
+The original once let you say "comma", "full stop" or "new paragraph" and get the mark. That needed two things: a prompt sent to Whisper telling it to write those words out rather than convert them, and a longer cleanup prompt that turned them into punctuation. Whisper treats its prompt as the transcript so far, not as instructions. In quiet audio it sometimes recited the prompt, and in noisy audio (dictating on a train) it filled hard-to-hear stretches with the prompt's own words, such as "you can also convert them into punctuation…". The server caught most recitals by looking for six of the prompt's words in a row and re-transcribing without the prompt, but shorter fragments got through. The user never dictated punctuation, so the feature was switched off. Whisper now gets no prompt, and the problem cannot occur. If you want spoken formatting, expect to build the recital check too.
+
+## Rules worth keeping
+
+1. Write the audio somewhere durable before any network call, and name each clip uniquely.
+2. Return raw as well as cleaned; if cleanup fails, return raw alone.
+3. Never lose a finished transcript: hold it if the field changed, keep or queue the clip if the send failed.
+4. Never put dictated text into a password field.
+5. Cleanup punctuates and removes filler; it never rewords, summarises or completes.
+6. Don't send Whisper a prompt unless you need to: it can recite it into your text. Return nothing when the whole transcript is a stock near-silence phrase.
+7. Give a reasoning model room to think, judge its answer, retry once, then fall back to the raw text.
+8. Decide layout in code where you can: the model can't hear pauses.
+9. Keep model names configurable: Groq has withdrawn models with a day's notice.
+10. On Android, show the floating mic only while a keyboard is on screen. On Windows, never let the recording window take focus.
+
+## Server or no server
+
+The original routes every client through one server. That keeps one copy of the prompts and models, one recordings archive, and the key off the devices. A simpler build for one person calls Groq directly from each app, with a key held in that app's settings: the same two calls and the same prompt. The trade-off is that a prompt or model change means updating every app. The save-the-audio-first rule then applies on the device.
+
+## The cleanup prompt
+
+`{{input}}` is replaced by the raw transcript, and `{{paragraphs}}` by one of the two paragraph rules below, chosen by the transcript's word count.
+
+```
+You are cleaning up a raw speech-to-text transcript so the speaker can paste it directly into a chat thread. The output will be auto-copied to the clipboard, so the speaker may not re-read carefully.
+
+Make ONLY these changes:
+1. Add punctuation (commas, periods, question marks). {{paragraphs}}
+2. Capitalize sentence starts and proper nouns.
+3. Remove pure filler, and nothing else: "um", "uh", false-start stutters ("the the", "I I"), and these verbal tics:
+   - "like" used as a pause or hedge: "it's like a big problem" → "it's a big problem"; "we could like move it" → "we could move it". Keep "like" when it means similar to, such as, enjoy or want: "feels like", "looks like", "something like", "things like taxes", "I'd like".
+   - "sort of" and "kind of" used as hedges before a verb, adjective or phrase: "we can kind of talk about it" → "we can talk about it"; "it's sort of too bouncy" → "it's too bouncy". Keep them when they mean a type of: "some kind of widget", "a sort of homebrew version", "this kind of thing".
+   - "you know" and "I mean" when meaningless.
+   Delete only the tic itself and fix the punctuation around it; never rephrase the sentence to absorb it. Every other word stays, including "maybe", "just", "so", "and", "actually", "I guess", "I think" and sentence-opening "And" or "So": they are how the speaker talks, not filler. If deleting a tic would leave the sentence ungrammatical, keep the tic.
+4. Fix obvious Whisper transcription slips where the correction is unambiguous from immediate context (e.g. "rank is the just a list" → "rank is just a list", duplicated words, mis-split words, a contraction missing its ending such as "they don control" → "they don't control" or "that true" → "that's true"). Only fix if you are highly confident.
+
+Do NOT:
+- Swap any word for a synonym, even if the synonym seems more natural.
+- Paraphrase, summarize, condense, or smooth out the speaker's phrasing.
+- Complete a sentence the speaker did not finish. If the transcript ends mid-thought, leave it mid-thought — even by a single word. Example: raw ends "I will leave it as your final" → output ends "I will leave it as your final" (NOT "your final decision" or "your final call"). The truncation is the speaker's actual state and must be preserved.
+- Reinterpret a phrase even if it sounds odd. If unsure, leave it as-is.
+- Add information, examples, or clarifications the speaker did not say.
+
+If you are uncertain whether a change is safe, do not make it. The speaker prefers verbatim with punctuation over a polished rewrite.
+
+<transcript>
+{{input}}
+</transcript>
+
+Return your result in this exact format:
+<cleaned>
+[cleaned transcript here]
+</cleaned>
+```
+
+Under 150 words, `{{paragraphs}}` is:
+
+```
+Return a single paragraph: no line breaks at all.
+```
+
+At 150 words or more:
+
+```
+Split the text into paragraphs where the topic changes, with one blank line between paragraphs. Paragraphs run to about 80-150 words each, so a 300-word transcript usually has 2 or 3 and an 800-word one about 6. Never put each sentence on its own line, and never end a line with spaces.
+```
+
+</script>
+
+<script src="video/story.js"></script>
+<script src="video/mic-phone.js"></script>
+<script src="video/win-desktop.js"></script>
+<script>
+(function () {
+  // Theme toggle: system by default; the button cycles light / dark.
+  var root = document.documentElement, btn = document.getElementById('themeBtn');
+  try { var t = localStorage.getItem('vk-theme'); if (t) root.setAttribute('data-theme', t); } catch (e) {}
+  btn.addEventListener('click', function () {
+    var dark = root.getAttribute('data-theme') ? root.getAttribute('data-theme') === 'dark'
+      : matchMedia('(prefers-color-scheme: dark)').matches;
+    var next = dark ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('vk-theme', next); } catch (e) {}
+  });
+
+  // Reduced motion: drop the one-time pulse in the overview.
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.querySelectorAll('.hero-pulse').forEach(function (g) { g.remove(); });
+  }
+
+  var NS = 'http://www.w3.org/2000/svg';
+
+  // Flows: give each step a lane map (device / server / Groq) with its
+  // numbered dot, then join the dots with one line in the flow's colour.
+  var LANES = { device: 0, server: 1, groq: 2 };
+  document.querySelectorAll('.flow-wrap').forEach(function (wrap) {
+    var ol = wrap.querySelector('.flow'), items = ol.querySelectorAll(':scope > li');
+    items.forEach(function (li, n) {
+      var body = document.createElement('div'); body.className = 'body';
+      while (li.firstChild) body.appendChild(li.firstChild);
+      var map = document.createElement('div'); map.className = 'lane-map'; map.setAttribute('aria-hidden', 'true');
+      var dot = document.createElement('i'); dot.textContent = n + 1;
+      dot.style.gridColumn = (LANES[li.dataset.where] + 1);
+      map.appendChild(dot); li.appendChild(map); li.appendChild(body);
+    });
+    var svg = document.createElementNS(NS, 'svg'); svg.setAttribute('class', 'flow-line'); wrap.insertBefore(svg, wrap.firstChild);
+    var path = document.createElementNS(NS, 'path'); path.setAttribute('fill', 'none'); path.setAttribute('stroke-width', '3');
+    path.setAttribute('stroke-linejoin', 'round');
+    path.setAttribute('stroke', ol.classList.contains('text') ? 'var(--text)' : 'var(--audio)'); svg.appendChild(path);
+    function draw() {
+      var box = wrap.getBoundingClientRect(), pts = [];
+      ol.querySelectorAll(':scope > li').forEach(function (li) {
+        var r = li.querySelector('.lane-map i').getBoundingClientRect();
+        pts.push([r.left + r.width / 2 - box.left, r.top + r.height / 2 - box.top, li.hasAttribute('data-break')]);
+      });
+      // Vertical runs on a track, a short diagonal where the lane changes.
+      // A step marked data-break is not a continuation: the line stops.
+      var dpath = 'M' + pts[0][0] + ' ' + pts[0][1];
+      for (var k = 1; k < pts.length; k++) {
+        var a = pts[k - 1], b = pts[k];
+        if (b[2]) { dpath += ' M' + b[0] + ' ' + b[1]; continue; }
+        if (a[0] === b[0]) { dpath += ' L' + b[0] + ' ' + b[1]; continue; }
+        var bend = Math.max(a[1] + 14, b[1] - 34);
+        dpath += ' L' + a[0] + ' ' + bend + ' L' + b[0] + ' ' + Math.min(bend + 20, b[1]) + ' L' + b[0] + ' ' + b[1];
+      }
+      path.setAttribute('d', dpath);
+    }
+    draw();
+    addEventListener('resize', draw);
+    wrap.addEventListener('toggle', draw, true);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+  });
+
+  // Floating mic state tabs.
+  var notes = {
+    ready: '<b>Ready.</b> A field is focused, Gboard is up, and the server answered: a solid green outline. Tap to record.',
+    offline: '<b>Offline.</b> The server didn’t answer: the outline turns red with a gap at the bottom. You can still record; a failed send keeps the clip for a retry.',
+    checking: '<b>Checking.</b> A thin grey ring while the connection check is under way, usually for well under a second.',
+    recording: '<b>Recording.</b> The disc grows inward into a pill: elapsed time, a live level meter, and a red stop button under your thumb. Tap it to send.',
+    sending: '<b>Sending.</b> The outline spins around a dimmed mic until the text comes back, then the text is typed into the field.',
+    recover: '<b>Something to recover.</b> An amber outline that pulses a few times: a send failed, or text is being held because you moved. A tap still records something new.',
+    menu: '<b>Long-press.</b> A small menu opens toward the middle of the screen: Insert held text, Retry failed send, Settings. Items that don’t apply are greyed out.',
+    nokbd: '<b>No keyboard, no mic.</b> After you send a message and the keyboard closes, the mic goes too, even though the chat still has a text field focused.'
+  };
+  var note = document.getElementById('stateNote'), tabs = document.querySelectorAll('#phoneTabs button');
+  // The state drawings fit themselves to their container, which is hidden
+  // until "Every state" is chosen, so each is created on first view.
+  var phone = null, phoneState = 'ready';
+  function ensurePhone() {
+    if (!phone && window.MicPhone) phone = MicPhone.create(document.getElementById('phoneArt'), { alignX: 0 });
+    if (phone) phone.setState(phoneState);
+  }
+  function show(st) {
+    phoneState = st;
+    if (phone) phone.setState(st);
+    note.innerHTML = notes[st];
+    tabs.forEach(function (b) { b.setAttribute('aria-selected', b.dataset.state === st ? 'true' : 'false'); });
+  }
+  tabs.forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.state); }); });
+  show('ready');
+
+  // Windows tray states.
+  var winNotes = {
+    ready: '<b>Ready.</b> A grey mic in the tray: the app is running and the server answers. Press Ctrl+Shift+; to record.',
+    recording: '<b>Recording.</b> The icon turns red, a start sound plays, and a small recording window shows the level and the time. Press the hotkey again to stop.',
+    sending: '<b>Sending.</b> Amber while the clip is transcribed and cleaned up.',
+    unreachable: '<b>Server unreachable.</b> A slash through the icon. You can still record: a clip that can\u2019t be sent waits in a queue on disk and goes when the server answers again.',
+    queued: '<b>Clips waiting.</b> The red badge means clips are queued. They\u2019re retried by themselves, oldest first.',
+    menu: '<b>The tray menu.</b> Status, which microphone, retry queued clips, the log and the settings file, and switches for sounds, notifications and the recording window.',
+    toast: '<b>The notification.</b> One chime, and a preview of the cleaned text as it reaches the clipboard. Paste it with Ctrl+V.'
+  };
+  var winNote = document.getElementById('winNote'), winTabs = document.querySelectorAll('#winTabs button');
+  var desk = null, deskState = 'ready';
+  function ensureDesk() {
+    if (!desk && window.WinDesktop) desk = WinDesktop.create(document.getElementById('winArt'));
+    if (desk) desk.setState(deskState);
+  }
+  function showWin(st) {
+    deskState = st;
+    if (desk) desk.setState(st);
+    winNote.innerHTML = winNotes[st];
+    winTabs.forEach(function (b) { b.setAttribute('aria-selected', b.dataset.state === st ? 'true' : 'false'); });
+  }
+  winTabs.forEach(function (b) { b.addEventListener('click', function () { showWin(b.dataset.state); }); });
+  showWin('ready');
+
+  // Video / Every state switch for each demo.
+  document.querySelectorAll('.view-switch').forEach(function (sw) {
+    var demo = document.getElementById(sw.dataset.for);
+    sw.querySelectorAll('button').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var view = b.dataset.view;
+        demo.setAttribute('data-view', view);
+        sw.querySelectorAll('button').forEach(function (o) { o.setAttribute('aria-selected', o === b ? 'true' : 'false'); });
+        var v = demo.querySelector('video');
+        if (view === 'states') {
+          if (v) v.pause();
+          if (demo.id === 'demoMic') ensurePhone(); else ensureDesk();
+        } else if (v && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          var pr = v.play(); if (pr && pr.catch) pr.catch(function () {});
+        }
+      });
+    });
+  });
+
+  // Clips play, muted, while on screen, unless the viewer prefers less motion.
+  var calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!calm && 'IntersectionObserver' in window) {
+    var vio = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        var v = e.target;
+        if (e.isIntersecting && v.offsetParent !== null) { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
+        else v.pause();
+      });
+    }, { threshold: 0.5 });
+    document.querySelectorAll('.vk-clip').forEach(function (v) { vio.observe(v); });
+  }
+
+  // Rail: mark the section in view.
+  var links = document.querySelectorAll('.rail nav a');
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (e.isIntersecting) links.forEach(function (a) { a.classList.toggle('on', a.getAttribute('href') === '#' + e.target.id); });
+      });
+    }, { rootMargin: '-30% 0px -60% 0px' });
+    document.querySelectorAll('main section').forEach(function (s) { io.observe(s); });
+  }
+
+  // Brief: copy and download.
+  var brief = document.getElementById('brief').textContent.trim() + '\n', msg = document.getElementById('copyMsg');
+  // navigator.clipboard needs HTTPS; a page served over plain http falls back to
+  // the older selection-based copy.
+  function legacyCopy(s) {
+    var ta = document.createElement('textarea');
+    ta.value = s; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    var ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+    ta.remove();
+    return ok ? Promise.resolve() : Promise.reject();
+  }
+  document.getElementById('copyBrief').addEventListener('click', function () {
+    (window.isSecureContext && navigator.clipboard ? navigator.clipboard.writeText(brief) : legacyCopy(brief))
+      .then(function () { msg.textContent = 'Copied. Paste it into a new Claude conversation.'; })
+      .catch(function () { msg.textContent = 'Copy didn’t work here; use Download instead.'; });
+  });
+})();
+</script>
+</body>
+</html>
