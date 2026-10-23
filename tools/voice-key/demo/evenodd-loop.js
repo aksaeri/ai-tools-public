@@ -39,7 +39,8 @@
     const canvas = document.createElement('canvas');
     canvas.width = W; canvas.height = H;
     canvas.setAttribute('aria-hidden', 'true');
-    canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;';
+    // z-index 1 keeps the canvas above the host's own still (an img with a transform would otherwise paint over it)
+    canvas.style.cssText = 'position:absolute;inset:0;z-index:1;width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;';
     el.prepend(canvas);
     const g = canvas.getContext('2d');
     const off = () => { const c = document.createElement('canvas'); c.width = W; c.height = H; return c; };
