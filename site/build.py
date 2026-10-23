@@ -143,7 +143,7 @@ THEME_SWITCH = """<div class="theme" role="group" aria-label="Colour theme">
 </div>"""
 
 
-def page(title, body, depth, cfg, desc="", hero="", sec=None):
+def page(title, body, depth, cfg, desc="", hero="", sec=None, scripts=()):
     up = "../" * depth
     home = up or "./"
     return f"""<!doctype html>
@@ -166,16 +166,22 @@ def page(title, body, depth, cfg, desc="", hero="", sec=None):
 </main>
 <footer class="wrap muted">MIT licence · <a href="https://github.com/{e(cfg['repo'])}">Source on GitHub</a> · <a href="{home}llms.txt">llms.txt</a></footer>
 <script src="{up}site.js"></script>
+{"".join(f'<script src="{e(src)}" defer></script>' for src in dict.fromkeys(scripts))}
 </body>
 </html>
 """
+
+
+def anim_attrs(t, speed_key):
+    a = t.get("animation")
+    return f' {a["attr"]} data-speed="{a.get(speed_key, 1)}"' if a else ""
 
 
 def card_html(t):
     base = f"{t['sec']['dir']}/{t['slug']}"
     art = f'<img src="{e(base)}/{e(asset(t["art"]))}" alt="" loading="lazy">' if t.get("art") else header_svg(t)
     return f"""<a class="card" href="{e(base)}/">
-  <div class="poster" aria-hidden="true">{art}</div>
+  <div class="poster"{anim_attrs(t, "card_speed")}>{art}</div>
   <div class="cb"><b>{e(t['title'])}</b><span>{e(t['summary'])}</span>{tags_html(t)}</div>
 </a>"""
 
@@ -199,7 +205,8 @@ def index_page(cfg, tools):
 claude plugin install &lt;skill&gt;@{e(cfg['marketplace'])}</code></pre>
 <p class="note">In Cowork, open Customize, then Plugins, then Add marketplace, and enter <code>{e(cfg['repo'])}</code>.</p>
 </section>""")
-    return page(cfg["title"], "\n".join(parts), 0, cfg)
+    scripts = [f"{t['sec']['dir']}/{t['slug']}/{asset(t['animation']['script'])}" for t in tools if t.get("animation")]
+    return page(cfg["title"], "\n".join(parts), 0, cfg, scripts=scripts)
 
 
 def media_html(t):
@@ -336,7 +343,7 @@ claude plugin install {e(slug)}@{e(cfg['marketplace'])}</code></pre>{need_line}
     if t.get("art"):
         credit = f'<p class="art-credit">Art: {e(t.get("art_title", ""))}</p>' if t.get("art_title") else ""
         hero = f"""<!-- --art resolves against style.css at the site root, hence the tool folder in the path -->
-<section class="hero-art" style="--art: url('{e(t['sec']['dir'])}/{e(slug)}/{e(asset(t['art']))}')">
+<section class="hero-art"{anim_attrs(t, "speed")} style="--art: url('{e(t['sec']['dir'])}/{e(slug)}/{e(asset(t['art']))}')">
 <div class="wrap"><div class="hero-boxes">
 <h1><span>{e(t['title'])}</span></h1>
 <p class="lede">{e(t['summary'])}</p>
@@ -370,7 +377,8 @@ claude plugin install {e(slug)}@{e(cfg['marketplace'])}</code></pre>{need_line}
 {''.join(panels)}
 <p class="note">{" · ".join(x for x in [f'<a href="{e(source)}">Read the code on GitHub</a>' if t["skills"] or t.get("code") else "", f'<a href="{e(brief)}">The brief, as Markdown</a>' if brief else "", '<a href="llms.txt">llms.txt</a>'] if x)}</p>
 </section>"""
-    return page(f"{t['title']} · {cfg['title']}", body, 2, cfg, t["summary"], hero, t["sec"])
+    scripts = [asset(t["animation"]["script"])] if t.get("animation") else []
+    return page(f"{t['title']} · {cfg['title']}", body, 2, cfg, t["summary"], hero, t["sec"], scripts)
 
 
 def llms_root(cfg, tools):
