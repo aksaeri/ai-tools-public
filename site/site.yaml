@@ -5,6 +5,7 @@ author: Alexander Saeri
 url: https://tools.aksaeri.com/
 repo: aksaeri/ai-tools-public
 marketplace: aksaeri-tools
+share_description: Claude skills and tools I've built, cleaned up so you can install them or build your own.
 tagline: Skills I've found helpful, cleaned up so you can install them or build them yourself.
 sections:
 - dir: skills

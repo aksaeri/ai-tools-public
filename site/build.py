@@ -153,6 +153,16 @@ def page(title, body, depth, cfg, desc="", hero="", sec=None, scripts=()):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{e(title)}</title>
 <meta name="description" content="{e(desc or cfg['tagline'])}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="{e(cfg['title'])}">
+<meta property="og:title" content="{e(title)}">
+<meta property="og:description" content="{e(desc or cfg.get('share_description', cfg['tagline']))}">
+<meta property="og:image" content="{e(cfg['url'].rstrip('/'))}/og-image.webp">
+<meta property="og:image:type" content="image/webp">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="AI tools: Claude skills and tools by {e(cfg['author'])}, at tools.aksaeri.com">
+<meta name="twitter:card" content="summary_large_image">
 {THEME_BOOT}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
@@ -415,6 +425,9 @@ def build_site(cfg, tools, out: Path):
     for f in ("style.css", "site.js"):
         shutil.copy(SITE / f, out / f)
     (out / ".nojekyll").write_text("")
+    if (SITE / "og" / "og-image.webp").exists():
+        shutil.copy(SITE / "og" / "og-image.webp", out / "og-image.webp")
+    shutil.copytree(SITE / "og", out / "og")   # the template, so the image can be re-rendered from the preview
     (out / "index.html").write_text(index_page(cfg, tools))
     (out / "llms.txt").write_text(llms_root(cfg, tools))
     for sec in cfg["sections"]:
