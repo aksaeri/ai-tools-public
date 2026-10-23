@@ -4,7 +4,6 @@ order: 6
 summary: Before you clear a Claude Code session, Claude saves what's still open to a file, and the next session starts by reading it.
 how_i_use_it: |
   Before I clear a session, I say "preclear", and Claude writes down anything still open: replies I'm waiting on, checks due later, decisions I put off. The next session starts with that list.
-endorsement: I use this several times a day.
 surfaces:
   claude-ai:
     verdict: 'no'

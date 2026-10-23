@@ -71,6 +71,17 @@ copy the scrub list anywhere, and never quote its contents in anything that will
    --stat origin/main..HEAD` (or every commit, before the first push) and the diff. Push only
    after they say yes to this push. Approval for an earlier push doesn't carry over.
 
+## Before exporting: what the first exports taught
+
+- **Find out who maintains the skill first.** If it isn't the user's own (another person, or another Claude session that looks after it), don't edit its source. Write down what needs to change and why, point at the `check` output, and let its owner make the change or approve yours. Draft proposed files in a separate review folder, never in the live skill.
+- **Nothing may change for the owner.** The skill keeps working on its home machine exactly as before. Test that, for example by running a changed script on the owner's machine and comparing the results.
+- **Skill tied to one setup?** Split it: a general core in SKILL.md, and everything about this user's machine, accounts, people and folders in a `local.md` beside it. SKILL.md says "If `local.md` exists, read it first; it wins." Add `local.md` to the tool's `exclude`. The owner's sessions read local.md and behave as before; the public copy is the general core. Personal material such as writing samples stays in a gitignored folder and goes in no repo at all.
+- **Curated lists** (accounts someone follows, favourite sources): give the public copy an example file with `replace`, and leave the owner's copy alone.
+- **A description too long for Claude chat** (over 200 characters): set a short public `description` in tools.yaml rather than changing the one that triggers the skill for its owner.
+- **Uncommitted work at a git source isn't exported.** Ask before committing it, and commit only the skill's own files, not unrelated changes other people or sessions left in that repo.
+- **If a safety hook or permission check blocks a step, stop and tell the user** what you were doing and why it was blocked. Don't reword the command or switch tools to get past it. If the pre-push scan blocks a push, fix the finding; never skip the hook.
+- **Some things no scan catches:** names of people and projects not on the list, private numbers like group IDs, and anything in images or video. Read the changes yourself as well.
+
 ## Other commands
 
 - `REL status`: each tool is `current`, `behind` (the source changed since the last export) or

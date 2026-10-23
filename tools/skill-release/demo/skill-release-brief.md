@@ -54,6 +54,14 @@ The check also reports where the skill will run:
 - Branches and pull requests on a public repo are public as soon as they're pushed, so review happens before the push, on your own machine.
 - A pre-push hook reruns the scan over every tracked file as a backstop. It can't replace a person reading the diff, because no pattern list knows every name.
 
+## What the first exports taught
+
+- **Skills tied to one setup need a split, not a scrub.** Text swaps can't clean a skill built around one person's folders and machines. The general method stays in SKILL.md, and everything about the owner's setup moves to a `local.md` that SKILL.md reads when it exists. The owner's sessions behave as before, and the export leaves local.md out.
+- **Ask whoever maintains a skill before changing it.** Draft the change in a separate folder and let them apply it. That matters even more when the maintainer is another Claude session that relies on the skill every day.
+- **Curated lists get example files.** A list of accounts someone follows is personal, so the public copy gets a short example instead.
+- **Stop when a safety check blocks you.** A hook or permission check that fires is the user's to overrule. Don't rephrase the command to get past it.
+- **People read the diff.** No pattern list knows every colleague's name or every private ID.
+
 ## Rebuilding it
 
 - The scan is the core: your patterns plus the built-in checks above, run over the transformed output rather than the source.

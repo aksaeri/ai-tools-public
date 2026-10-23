@@ -84,6 +84,7 @@ class Tool:
     skill: str = ""
     description: str = ""      # replaces the SKILL.md description in the public copy only
     replace: dict = field(default_factory=dict)   # relative path -> file whose content the public copy gets
+    source_date: str = ""      # set by read_source: when the exported source last changed
 
     def __post_init__(self):
         self.skill = self.skill or self.name
@@ -415,6 +416,7 @@ def read_source(tool: Tool):
             if not _skipped(rel, tool.exclude):
                 files[rel] = _decode(_git(top, "show", f"HEAD:{full}", binary=True))
         ref = _git(top, "log", "-1", "--format=%H", "HEAD", "--", prefix or ".").strip()
+        tool.source_date = _git(top, "log", "-1", "--format=%cs", "HEAD", "--", prefix or ".").strip()
     else:
         root = (tool.source / tool.path).resolve()
         h = hashlib.sha256()
@@ -424,6 +426,8 @@ def read_source(tool: Tool):
                 continue
             data = p.read_bytes()
             h.update(rel.encode() + b"\0" + data)
+            day = dt.date.fromtimestamp(p.stat().st_mtime).isoformat()
+            tool.source_date = max(tool.source_date, day)
             files[rel] = _decode(data)
         ref = "sha256:" + h.hexdigest()
     return files, ref
@@ -505,7 +509,8 @@ def export(cfg: Config, name: str, commit: bool = True) -> Report:
         plugin["author"] = {"name": cfg.author}
     (root / ".claude-plugin").mkdir(parents=True, exist_ok=True)
     (root / ".claude-plugin" / "plugin.json").write_text(json.dumps(plugin, indent=2, ensure_ascii=False) + "\n")
-    snap = {"source_ref": rep.ref, "exported": dt.date.today().isoformat(), "surfaces": rep.assessment}
+    snap = {"source_ref": rep.ref, "source_date": tool.source_date, "exported": dt.date.today().isoformat(),
+            "surfaces": rep.assessment}
     (root / "snapshot.json").write_text(json.dumps(snap, indent=2, ensure_ascii=False) + "\n")
     if not (root / "tool.yaml").exists():
         (root / "tool.yaml").write_text(yaml.safe_dump({

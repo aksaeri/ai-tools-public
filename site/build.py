@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import html
 import json
 import re
@@ -220,6 +221,13 @@ def prose_html(text: str) -> str:
     return "".join(out)
 
 
+def requires_li(t):
+    def line(r):
+        r = r if r.endswith(".") else r + "."
+        return e(r) if r.lower().startswith("optional") else "Needs " + e(r[:1].lower() + r[1:])
+    return "".join(f'<li class="req">{line(r)}</li>' for r in t.get("requires", []))
+
+
 def where_html(t):
     rows = []
     for key, label in SURFACES:
@@ -228,7 +236,7 @@ def where_html(t):
         s = surface_info(t, key)
         ok = s.get("verdict") in OK
         status = "Works" if s.get("verdict") == "works" else "Works, with notes" if ok else "Doesn't run here"
-        reasons = "".join(f"<li>{e(r)}</li>" for r in shown_reasons(s))
+        reasons = (requires_li(t) if ok else "") + "".join(f"<li>{e(r)}</li>" for r in shown_reasons(s))
         rows.append(f'<tr><th scope="row">{e(label)}</th><td><span class="state {"ok" if ok else "no"}">{e(status)}</span>'
                     f'{f"<ul>{reasons}</ul>" if reasons else ""}</td></tr>')
     if t.get("brief"):
@@ -236,10 +244,16 @@ def where_html(t):
     return f'<table class="where">{"".join(rows)}</table>'
 
 
+def human_date(iso: str) -> str:
+    try:
+        d = dt.date.fromisoformat(iso)
+    except ValueError:
+        return ""
+    return f"{d.day} {d.strftime('%B %Y')}"
+
+
 def tool_page(cfg, t):
     slug, snap = t["slug"], t["snapshot"]
-    cc = surface_info(t, "claude-code")
-    needs = t.get("needs") or cc.get("needs") or []
     brief = Path(t["brief"]).name if t.get("brief") else ""
     brief_url = f"{cfg['url'].rstrip('/')}/{slug}/{brief}" if brief else ""
     tabs, panels = [], []
@@ -254,8 +268,7 @@ def tool_page(cfg, t):
         return f"<p>This one doesn't run in {e(label)}:</p><ul>{why}</ul><p>Use Claude Code, or build your own version from the brief.</p>"
 
     if t["skills"]:
-        listed = needs[0] if len(needs) == 1 else ", ".join(needs[:-1]) + " and " + needs[-1] if needs else ""
-        need_line = f"<p>You'll need {e(listed)}.</p>" if needs else ""
+        need_line = f'<ul>{requires_li(t)}</ul>' if t.get("requires") else ""
         tab("cc", "Claude Code", f"""<p>Run these once in a terminal. To update later, run <code>claude plugin update {e(slug)}@{e(cfg['marketplace'])}</code>.</p>
 <pre><code>claude plugin marketplace add {e(cfg['repo'])}
 claude plugin install {e(slug)}@{e(cfg['marketplace'])}</code></pre>{need_line}
@@ -285,7 +298,7 @@ claude plugin install {e(slug)}@{e(cfg['marketplace'])}</code></pre>{need_line}
 <div class="copyrow"><pre class="prompt">{e(prompt)}</pre><button class="btn copy" type="button">Copy</button></div>
 <p class="note copied" aria-live="polite"></p>""")
     source = f"https://github.com/{cfg['repo']}/tree/main/tools/{slug}"
-    exported = snap.get("exported", "")
+    updated = human_date(snap.get("source_date") or snap.get("exported", ""))
     art = header_svg(t)
     media = media_html(t)
     body = f"""<section class="hero">
@@ -298,7 +311,7 @@ claude plugin install {e(slug)}@{e(cfg['marketplace'])}</code></pre>{need_line}
 <section class="col">
 <h2>How I use it</h2>
 {prose_html(t.get('how_i_use_it', ''))}
-<p class="prov">{f'Snapshot of {e(exported)}. ' if exported else ''}{e(t.get('endorsement', ''))}</p>
+{f'<p class="prov">Last updated {e(updated)}</p>' if updated else ''}
 </section>
 {f'<section class="media">{media}</section>' if media else ''}
 <section class="col">

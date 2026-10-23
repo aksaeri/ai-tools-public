@@ -3,10 +3,7 @@ header: demo/header.svg
 order: 3
 summary: Checks a skill you want to share for private details, like machine names or your email, then copies a cleaned version into a public repo.
 how_i_use_it: |
-  I keep developing my skills privately and use this to publish them here. Claude checks a skill for anything private - machine names, colleagues, my email - and removes it from the public copy. The list of what to look for stays on my machine, outside the tool.
-
-  I still read every change before anything is pushed, because no list catches everything.
-endorsement: 'Oct 2026 status: new. I used it to publish each tool on this site.'
+  I wanted to publish skills I'd built privately, which were full of my own setup and private details. This skill cleans a skill up and gets it ready to publish. I read the changes before anything goes public.
 media: []
 brief: demo/skill-release-brief.md
 surfaces:
@@ -14,3 +11,5 @@ surfaces:
     reasons:
     - needs uv installed inside Cowork's virtual machine
     - sees only the folders you connect, so connect your skill sources, your public repo and your settings folder
+requires:
+- A public git repository you can push to, such as one on GitHub

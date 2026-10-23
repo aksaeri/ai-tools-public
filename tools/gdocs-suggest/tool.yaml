@@ -8,10 +8,11 @@ how_i_use_it: |
   - rewrites and filled-in {TBC} markers go in red under my original
   - small fixes come as suggestions I accept or reject
   - questions come as comments starting [Claude]
-endorsement: I use this on most drafts before colleagues see them.
 media:
 - image: demo/before.png
   caption: A made-up workshop summary, before Claude's review.
 - image: demo/after.png
   caption: 'After one run: suggested fixes inline, and a filled-in placeholder and a rewrite in red under the originals.'
 brief: demo/gdocs-suggest-brief.md
+requires:
+- A Google account, with the gws command-line tool signed in to it

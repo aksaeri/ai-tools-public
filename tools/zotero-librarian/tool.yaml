@@ -3,11 +3,13 @@ header: demo/header.svg
 order: 2
 summary: Turns a DOI, arXiv ID, link or half-remembered title into a correctly typed record in your Zotero library.
 how_i_use_it: |
-  I give Claude whatever I have - a link, a DOI, or a title someone mentioned in a talk - and say "add this to Zotero".
+  I give Claude whatever I have - a link, a DOI, or a title someone mentioned in a talk - and say "add this to Zotero". It adds to my own library or to a shared group library.
 
   - DOIs and arXiv IDs go straight through the official lookups, Crossref and arXiv.
-  - For a report on a website, Claude reads the page or PDF itself and fills in the item type, authors and abstract.
+  - For a report on a website, Claude reads the page or PDF itself and fills in the item type and authors.
+  - By default Claude adds the item's abstract, or writes a short summary from the document when there isn't one. You can tell it to leave the abstract out.
   - If there's a press release and the report it announces, Claude asks whether I want one record or both.
-endorsement: I use this whenever I add a reference.
 media: []
 brief: demo/zotero-librarian-brief.md
+requires:
+- A Zotero account, and a Zotero API key with write access

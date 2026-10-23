@@ -104,3 +104,4 @@ html:not(.js) .theme { display: none; }
 .state.ok { color: var(--accent-strong); }
 .state.no { color: var(--no); }
 .hero, .col, .panel, main.wrap { grid-template-columns: minmax(0, 1fr); }
+.where li.req { color: var(--fg); }

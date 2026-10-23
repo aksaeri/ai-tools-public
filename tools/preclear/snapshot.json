@@ -1,5 +1,6 @@
 {
   "source_ref": "sha256:a49dd41f4c84fb4576bfdc3784c7c2d3027465fb901ecf1ba6fa3959fe2c2664",
+  "source_date": "2026-10-23",
   "exported": "2026-10-23",
   "surfaces": {
     "claude-code": {

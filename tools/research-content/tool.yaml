@@ -4,7 +4,6 @@ order: 4
 summary: 'Sends several search agents out at once, each looking somewhere different, and brings back specific leads: videos with timestamps, forum comments, papers, Twitter posts. You say which to follow up.'
 how_i_use_it: |
   I use this to find information that a default web search won't bring back, especially content on YouTube and social media, and content buried under search-engine-optimised articles. I ask a question and get back a set of leads: some answer the question as asked, and others are worth investigating further.
-endorsement: 'Oct 2026 status: now runs several independent search agents at once.'
 surfaces:
   claude-ai:
     verdict: 'no'
@@ -15,6 +14,9 @@ surfaces:
     reasons:
     - needs yt-dlp installed inside Cowork's virtual machine for YouTube
     - calls outside services, so network access must be allowed for your workspace
-    - Reddit and Twitter need a TikHub key
 media: []
 brief: demo/research-content-brief.md
+requires:
+- 'Optional: a TikHub API key (paid), to search Reddit and Twitter'
+- 'Optional: a SerpAPI key, for search results from other countries'
+- 'Optional: a Groq API key, through the transcribe skill, for videos without captions'

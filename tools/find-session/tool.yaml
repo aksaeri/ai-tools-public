@@ -4,7 +4,6 @@ order: 7
 summary: Finds a past Claude Code session from a half-remembered description and gives you the command to resume it.
 how_i_use_it: |
   I describe old work the way I remember it, like "the session where we built the usage dashboard". Claude comes back with the project folder, the session and the resume command, plus a quote that shows it's the right one.
-endorsement: I use this most weeks.
 surfaces:
   claude-ai:
     verdict: 'no'
