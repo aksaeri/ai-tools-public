@@ -1,6 +1,20 @@
 title: research-content
-summary: "Scouts the web for leads the user steers: several independent search agents, each on a different angle, bring back specific sources (videos with the useful timestamp, forum and Reddit comments, pap\u2026"
-how_i_use_it: 'TODO: a paragraph in the author''s own words.'
-endorsement: Rebuilt 2026-10 around independent scouts and steering. Not yet re-endorsed after the rebuild.
+header: demo/header.svg
+order: 4
+summary: 'Sends several search agents out at once, each looking somewhere different, and brings back specific leads: videos with timestamps, forum comments, papers, Twitter posts. You say which to follow up.'
+how_i_use_it: |
+  I use this to find information that a default web search won't bring back, especially content on YouTube and social media, and content buried under search-engine-optimised articles. I ask a question and get back a set of leads: some answer the question as asked, and others are worth investigating further.
+endorsement: 'Oct 2026 status: now runs several independent search agents at once.'
+surfaces:
+  claude-ai:
+    verdict: 'no'
+    reasons:
+    - needs subagents and Python helpers with network access, which Claude chat can't run
+  cowork:
+    verdict: caveat
+    reasons:
+    - needs yt-dlp installed inside Cowork's virtual machine for YouTube
+    - calls outside services, so network access must be allowed for your workspace
+    - Reddit and Twitter need a TikHub key
 media: []
-brief: ''
+brief: demo/research-content-brief.md

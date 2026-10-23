@@ -21,6 +21,26 @@
       "name": "skill-release",
       "source": "./tools/skill-release",
       "description": "Checks a skill you want to share for private details, like machine names or your email, then copies a cleaned version into a public repo."
+    },
+    {
+      "name": "research-content",
+      "source": "./tools/research-content",
+      "description": "Sends several search agents out at once, each looking somewhere different, and brings back specific leads: videos with timestamps, forum comments, papers, Twitter posts. You say which to follow up."
+    },
+    {
+      "name": "writing-for-humans",
+      "source": "./tools/writing-for-humans",
+      "description": "Makes Claude decide what matters before it writes, so the result is plain and sounds like you."
+    },
+    {
+      "name": "preclear",
+      "source": "./tools/preclear",
+      "description": "Before you clear a Claude Code session, Claude saves what's still open to a file, and the next session starts by reading it."
+    },
+    {
+      "name": "find-session",
+      "source": "./tools/find-session",
+      "description": "Finds a past Claude Code session from a half-remembered description and gives you the command to resume it."
     }
   ]
 }

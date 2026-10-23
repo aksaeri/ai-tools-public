@@ -1,6 +1,11 @@
 title: writing-for-humans
-summary: 'Use when drafting or reviewing anything a person will read, so it is plain, triaged and sounds like you: reports, emails, pages, briefings, summaries.'
-how_i_use_it: 'TODO: a paragraph in the author''s own words.'
-endorsement: ''
+header: demo/header.svg
+order: 5
+summary: Makes Claude decide what matters before it writes, so the result is plain and sounds like you.
+how_i_use_it: |
+  I use this for anything someone will read: emails, reports and briefings. Claude works out who the reader is and what they need to decide, then leads with that.
+
+  For writing under my name, it first reads samples of my own writing. You'd build your own samples folder for that part; the brief says how.
+endorsement: I use this every day.
 media: []
-brief: ''
+brief: demo/writing-for-humans-brief.md

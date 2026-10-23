@@ -1,6 +1,6 @@
 {
   "name": "find-session",
-  "description": "Locate a past Claude Code session or project from a fuzzy, half-remembered description — \"the session where we built the OpenRouter usage dashboard\".",
+  "description": "Finds a past Claude Code session from a half-remembered description and gives you the command to resume it.",
   "author": {
     "name": "Alexander Saeri"
   }

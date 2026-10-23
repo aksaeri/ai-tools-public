@@ -1,6 +1,6 @@
 {
   "name": "writing-for-humans",
-  "description": "Use when drafting or reviewing anything a person will read, so it is plain, triaged and sounds like you: reports, emails, pages, briefings, summaries.",
+  "description": "Makes Claude decide what matters before it writes, so the result is plain and sounds like you.",
   "author": {
     "name": "Alexander Saeri"
   }

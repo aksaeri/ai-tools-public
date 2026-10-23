@@ -1,6 +1,6 @@
 {
   "name": "research-content",
-  "description": "Scouts the web for leads the user steers: several independent search agents, each on a different angle, bring back specific sources (videos with the useful timestamp, forum and Reddit comments, pap…",
+  "description": "Sends several search agents out at once, each looking somewhere different, and brings back specific leads: videos with timestamps, forum comments, papers, Twitter posts. You say which to follow up.",
   "author": {
     "name": "Alexander Saeri"
   }

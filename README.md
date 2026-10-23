@@ -9,6 +9,10 @@ Claude skills I use most weeks, cleaned up so you can install them or build your
 | [gdocs-suggest](tools/gdocs-suggest/) | Claude comments on, copyedits and fills gaps in a Google Doc. Everything it adds is red or marked [Claude]. |
 | [zotero-librarian](tools/zotero-librarian/) | Turns a DOI, arXiv ID, link or half-remembered title into a correctly typed record in your Zotero library. |
 | [skill-release](tools/skill-release/) | Checks a skill you want to share for private details, like machine names or your email, then copies a cleaned version into a public repo. |
+| [research-content](tools/research-content/) | Sends several search agents out at once, each looking somewhere different, and brings back specific leads: videos with timestamps, forum comments, papers, Twitter posts. You say which to follow up. |
+| [writing-for-humans](tools/writing-for-humans/) | Makes Claude decide what matters before it writes, so the result is plain and sounds like you. |
+| [preclear](tools/preclear/) | Before you clear a Claude Code session, Claude saves what's still open to a file, and the next session starts by reading it. |
+| [find-session](tools/find-session/) | Finds a past Claude Code session from a half-remembered description and gives you the command to resume it. |
 
 ## Install a skill in Claude Code
 
