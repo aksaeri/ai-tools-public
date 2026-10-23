@@ -82,6 +82,8 @@ class Tool:
     rewrite: list
     allow: list
     skill: str = ""
+    description: str = ""      # replaces the SKILL.md description in the public copy only
+    replace: dict = field(default_factory=dict)   # relative path -> file whose content the public copy gets
 
     def __post_init__(self):
         self.skill = self.skill or self.name
@@ -155,6 +157,9 @@ def load_config(cfg_dir=None) -> Config:
             name=name, source=_expand(t["source"]), path=t.get("path", "."),
             exclude=t.get("exclude", []), rewrite=t.get("rewrite", []),
             allow=compile_patterns(t.get("allow", [])), skill=t.get("skill", ""),
+            description=t.get("description", ""),
+            replace={rel: _expand(src) if os.path.isabs(os.path.expanduser(str(src))) else d / src
+                     for rel, src in (t.get("replace") or {}).items()},
         )
     return Config(dir=d, public_repo=_expand(raw["public_repo"]), author=raw.get("author", ""),
                   tools=tools, scrub=load_scrub(scrub_file), allow=compile_patterns(raw.get("allow", [])))
@@ -221,13 +226,28 @@ def _around(line: str, match: str):
 
 # --- frontmatter and transforms ----------------------------------------------
 
+def _lenient_yaml(block: str) -> dict:
+    """Claude Code accepts plain values containing ': ' (e.g. a description); strict YAML doesn't.
+    Quote such top-level values and parse again."""
+    out = []
+    for line in block.splitlines():
+        m = re.match(r"^([A-Za-z0-9_-]+):\s+(.*\S)\s*$", line)
+        if m and not m.group(2).startswith(("'", '"', "[", "{", "|", ">", "&", "*", "!")):
+            line = f"{m.group(1)}: " + json.dumps(m.group(2))
+        out.append(line)
+    return yaml.safe_load("\n".join(out)) or {}
+
+
 def split_frontmatter(text: str):
     if not text.startswith("---"):
         return {}, text
     end = text.find("\n---", 3)
     if end == -1:
         return {}, text
-    fm = yaml.safe_load(text[3:end]) or {}
+    try:
+        fm = yaml.safe_load(text[3:end]) or {}
+    except yaml.YAMLError:
+        fm = _lenient_yaml(text[3:end])
     body = text[end + 4:].lstrip("\n")
     return fm, body
 
@@ -256,11 +276,13 @@ def _install_path_re(skill: str):
     return re.compile(r"(?:~|\$HOME|\$\{HOME\}|%USERPROFILE%)[/\\]\.claude[/\\]skills[/\\]" + s + r"(?=[/\\\s`'\")]|$)")
 
 
-def transform_skill_md(text: str, skill: str) -> str:
+def transform_skill_md(text: str, skill: str, description: str = "") -> str:
     text = _install_path_re(skill).sub("${CLAUDE_SKILL_DIR}", text)
     fm, body = split_frontmatter(text)
     if not fm:
         return text
+    if description:
+        fm["description"] = description
     return join_frontmatter(_move_keys(fm, CLAUDE_CODE_KEYS), body)
 
 
@@ -420,12 +442,16 @@ def check(cfg: Config, name: str) -> Report:
     if not tool:
         raise SystemExit(f"no tool '{name}' in {cfg.dir / 'tools.yaml'}")
     raw, ref = read_source(tool)
+    for rel, src in tool.replace.items():
+        if not src.exists():
+            raise SystemExit(f"{name}: replacement for {rel} not found at {src}")
+        raw[rel] = _decode(src.read_bytes())
     out = {}
     for rel, content in raw.items():
         if isinstance(content, str):
             content = _apply_rewrites(content, tool.rewrite)
             if rel == "SKILL.md":
-                content = transform_skill_md(content, tool.skill)
+                content = transform_skill_md(content, tool.skill, tool.description)
         out[rel] = content
     rep = Report(tool=tool, ref=ref, files=out)
     if _is_git(tool.source):

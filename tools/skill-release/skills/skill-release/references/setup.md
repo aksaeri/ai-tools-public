@@ -23,6 +23,8 @@ tools:
       - ["ssh myserver", "ssh your-server"]
     allow:                                # false positives for this tool only
       - MIT Press
+    replace:                              # whole files the public copy gets instead
+      people.json: public/my-skill/people.json   # relative to this settings folder
 ```
 
 ## scrub.txt
