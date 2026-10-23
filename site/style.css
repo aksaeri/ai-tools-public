@@ -116,7 +116,8 @@ html:not(.js) .theme { display: none; }
 .hero-boxes { display: grid; gap: 10px; justify-items: start; max-width: 640px; }
 .hero-boxes h1 { margin: 0; }
 .hero-boxes h1 span, .hero-boxes .lede, .hero-boxes .tags { background: var(--surface); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
-.hero-boxes h1 span { display: inline-block; padding: 6px 14px; border-radius: 6px; }
+.hero-boxes h1 { font-size: clamp(38px, 6.5vw, 60px); line-height: 1.05; }
+.hero-boxes h1 span { display: inline-block; padding: 14px 24px 16px; border-radius: 8px; }
 .hero-boxes .lede { padding: 12px 14px; border-radius: 6px; }
 .hero-boxes .tags { padding: 8px 10px; border-radius: 6px; }
 .art-credit { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); bottom: 10px; margin: 0; font-size: 12px; padding: 2px 8px; border-radius: 4px; background: var(--surface); color: var(--muted); }
