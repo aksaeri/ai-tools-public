@@ -355,6 +355,7 @@ claude plugin install {e(slug)}@{e(cfg['marketplace'])}</code></pre>{need_line}
     body = f"""{top}<section class="col">
 <h2>How I use it</h2>
 {prose_html(t.get('how_i_use_it', ''))}
+{''.join(f'<p><a class="btn-link" href="{e(asset(l["href"]))}">{e(l["label"])} →</a></p>' for l in t.get("links", []))}
 {f'<p class="prov">Last updated {e(updated)}</p>' if updated else ''}
 </section>
 {f'<section class="col"><h2>Visual overview</h2><figure class="header-art">{art}</figure></section>' if art else ''}

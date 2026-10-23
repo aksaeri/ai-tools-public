@@ -126,3 +126,5 @@ html:not(.js) .theme { display: none; }
 .media figure.wide { grid-column: 1 / -1; }
 .only-narrow { display: none; }
 @media (max-width: 600px) { .only-wide { display: none; } .only-narrow { display: block; } }
+.btn-link { display: inline-block; font-weight: 600; padding: 8px 14px; border-radius: 6px; background: var(--accent); color: var(--surface); text-decoration: none; }
+.btn-link:hover { background: var(--accent-strong); color: var(--surface); }
