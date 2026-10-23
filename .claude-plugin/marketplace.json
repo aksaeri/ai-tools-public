@@ -4,42 +4,42 @@
     "name": "Alexander Saeri"
   },
   "metadata": {
-    "description": "Claude skills I use most weeks, cleaned up so you can install them or build your own."
+    "description": "Skills I've found helpful, cleaned up so you can install them or build them yourself."
   },
   "plugins": [
     {
       "name": "gdocs-suggest",
-      "source": "./tools/gdocs-suggest",
+      "source": "./skills/gdocs-suggest",
       "description": "Claude comments on, copyedits and fills gaps in a Google Doc. Everything it adds is red or marked [Claude]."
     },
     {
       "name": "zotero-librarian",
-      "source": "./tools/zotero-librarian",
+      "source": "./skills/zotero-librarian",
       "description": "Turns a DOI, arXiv ID, link or half-remembered title into a correctly typed record in your Zotero library."
     },
     {
       "name": "skill-release",
-      "source": "./tools/skill-release",
+      "source": "./skills/skill-release",
       "description": "Checks a skill you want to share for private details, like machine names or your email, then copies a cleaned version into a public repo."
     },
     {
       "name": "research-content",
-      "source": "./tools/research-content",
+      "source": "./skills/research-content",
       "description": "Sends several search agents out at once, each looking somewhere different, and brings back specific leads: videos with timestamps, forum comments, papers, Twitter posts. You say which to follow up."
     },
     {
       "name": "writing-for-humans",
-      "source": "./tools/writing-for-humans",
+      "source": "./skills/writing-for-humans",
       "description": "Makes Claude decide what matters before it writes, so the result is plain and sounds like you."
     },
     {
       "name": "preclear",
-      "source": "./tools/preclear",
+      "source": "./skills/preclear",
       "description": "Before you clear a Claude Code session, Claude saves what's still open to a file, and the next session starts by reading it."
     },
     {
       "name": "find-session",
-      "source": "./tools/find-session",
+      "source": "./skills/find-session",
       "description": "Finds a past Claude Code session from a half-remembered description and gives you the command to resume it."
     }
   ]

@@ -10,6 +10,7 @@ mkdir -p ~/.config/skill-release && chmod 700 ~/.config/skill-release
 
 ```yaml
 public_repo: ~/code/my-public-tools      # a local clone; skill-release never pushes
+public_dir: tools                         # folder in it with one subfolder per tool (default "tools")
 author: Your Name                         # goes into each plugin.json
 allow:                                    # fine to publish anywhere
   - MIT License

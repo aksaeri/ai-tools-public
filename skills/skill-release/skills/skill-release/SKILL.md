@@ -58,7 +58,7 @@ copy the scrub list anywhere, and never quote its contents in anything that will
    Don't weaken the scrub list to get a tool through.
 3. **Look at binary files yourself.** The scan can't read images or video. Open each one and
    check for names, faces, inboxes, calendars, file lists and browser tabs.
-4. **Export.** `REL export <tool>` repeats the check, writes `tools/<tool>/` in the public repo
+4. **Export.** `REL export <tool>` repeats the check, writes `<public_dir>/<tool>/` in the public repo (`public_dir` in tools.yaml, default `tools`)
    and commits locally. It never pushes. What it writes:
    - `skills/<skill>/`: the cleaned skill. Install paths such as `~/.claude/skills/<skill>/`
      become `${CLAUDE_SKILL_DIR}/`, and frontmatter keys Claude Code doesn't know move under

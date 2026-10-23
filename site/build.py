@@ -3,7 +3,10 @@
 # requires-python = ">=3.10"
 # dependencies = ["pyyaml>=6"]
 # ///
-"""Build the tools site and the Claude Code install list from tools/*/tool.yaml.
+"""Build the site and the Claude Code install list from skills/*/tool.yaml.
+
+Skills live in the folder named by section_dir in site.yaml; their pages are served at
+/<section_dir>/<skill>/, and the old /<skill>/ addresses redirect there.
 
   uv run site/build.py                 write .claude-plugin/marketplace.json and _site/
   uv run site/build.py --check         fail if marketplace.json is out of date (CI runs this)
@@ -29,9 +32,9 @@ CLAUDE_AI_KEYS = {"name", "description", "license", "compatibility", "metadata",
 e = html.escape
 
 
-def load_tools():
+def load_tools(cfg):
     tools = []
-    for d in sorted((ROOT / "tools").iterdir()):
+    for d in sorted((ROOT / cfg["section_dir"]).iterdir()):
         if not (d / "tool.yaml").exists():
             continue
         t = yaml.safe_load((d / "tool.yaml").read_text()) or {}
@@ -48,7 +51,7 @@ def marketplace(cfg, tools) -> str:
         "name": cfg["marketplace"],
         "owner": {"name": cfg["author"]},
         "metadata": {"description": cfg["tagline"]},
-        "plugins": [{"name": t["slug"], "source": f"./tools/{t['slug']}", "description": t["summary"]}
+        "plugins": [{"name": t["slug"], "source": f"./{cfg['section_dir']}/{t['slug']}", "description": t["summary"]}
                     for t in tools if t["skills"]],
     }
     return json.dumps(data, indent=2, ensure_ascii=False) + "\n"
@@ -147,7 +150,7 @@ def page(title, body, depth, cfg, desc="", hero=""):
 <link rel="stylesheet" href="{up}style.css">
 </head>
 <body>
-<header class="top"><div class="wrap"><a class="wordmark" href="{home}">{e(cfg['author'])}</a><a class="sitelink" href="{home}">{e(cfg['title'])}</a>{THEME_SWITCH}</div></header>
+<header class="top"><div class="wrap"><a class="wordmark" href="{home}">{e(cfg['author'])}</a><a class="sitelink" href="{home}">{e(cfg['title'])}</a><a class="sitelink" href="{home}">{e(cfg['section'])}</a>{THEME_SWITCH}</div></header>
 {hero}
 <main class="wrap">
 {body}
@@ -162,18 +165,18 @@ def page(title, body, depth, cfg, desc="", hero=""):
 def index_page(cfg, tools):
     cards = []
     for t in tools:
-        art = f'<img src="{e(t["slug"])}/{e(asset(t["art"]))}" alt="" loading="lazy">' if t.get("art") else header_svg(t)
+        base = f"{cfg['section_dir']}/{t['slug']}"
+        art = f'<img src="{e(base)}/{e(asset(t["art"]))}" alt="" loading="lazy">' if t.get("art") else header_svg(t)
         if not art:
             poster = next((m.get("poster") or m.get("image") for m in t.get("media", []) if m.get("poster") or m.get("image")), None)
-            art = f'<img src="{e(t["slug"])}/{e(asset(poster))}" alt="" loading="lazy">' if poster else ""
-        cards.append(f"""<a class="card" href="{e(t['slug'])}/">
+            art = f'<img src="{e(base)}/{e(asset(poster))}" alt="" loading="lazy">' if poster else ""
+        cards.append(f"""<a class="card" href="{e(base)}/">
   <div class="poster" aria-hidden="true">{art}</div>
   <div class="cb"><b>{e(t['title'])}</b><span>{e(t['summary'])}</span>{tags_html(t)}</div>
 </a>""")
     body = f"""<section class="hero">
-<h1>{e(cfg['title'])}</h1>
+<h1>{e(cfg['section'])}</h1>
 <p class="lede">{e(cfg['tagline'])}</p>
-<p class="muted">{e(cfg.get('intro', ''))}</p>
 </section>
 <section class="cards">
 {''.join(cards)}
@@ -184,7 +187,7 @@ def index_page(cfg, tools):
 claude plugin install &lt;tool&gt;@{e(cfg['marketplace'])}</code></pre>
 <p class="note">In Cowork, open Customize, then Plugins, then Add marketplace, and enter <code>{e(cfg['repo'])}</code>.</p>
 </section>"""
-    return page(cfg["title"], body, 0, cfg)
+    return page(cfg["section"], body, 0, cfg)
 
 
 def media_html(t):
@@ -256,7 +259,7 @@ def human_date(iso: str) -> str:
 def tool_page(cfg, t):
     slug, snap = t["slug"], t["snapshot"]
     brief = Path(t["brief"]).name if t.get("brief") else ""
-    brief_url = f"{cfg['url'].rstrip('/')}/{slug}/{brief}" if brief else ""
+    brief_url = f"{cfg['url'].rstrip('/')}/{cfg['section_dir']}/{slug}/{brief}" if brief else ""
     tabs, panels = [], []
 
     def tab(key, label, inner):
@@ -298,14 +301,14 @@ claude plugin install {e(slug)}@{e(cfg['marketplace'])}</code></pre>{need_line}
         tab("own", "Build your own", f"""<p>Give the brief to your own Claude and adapt it to what you use. <a href="{e(brief)}">Read the brief</a>.</p>
 <div class="copyrow"><pre class="prompt">{e(prompt)}</pre><button class="btn copy" type="button">Copy</button></div>
 <p class="note copied" aria-live="polite"></p>""")
-    source = f"https://github.com/{cfg['repo']}/tree/main/tools/{slug}"
+    source = f"https://github.com/{cfg['repo']}/tree/main/{cfg['section_dir']}/{slug}"
     updated = human_date(snap.get("source_date") or snap.get("exported", ""))
     art = header_svg(t)
     media = media_html(t)
     if t.get("art"):
         credit = f'<p class="art-credit">Art: {e(t.get("art_title", ""))}</p>' if t.get("art_title") else ""
         hero = f"""<!-- --art resolves against style.css at the site root, hence the tool folder in the path -->
-<section class="hero-art" style="--art: url('{e(slug)}/{e(asset(t['art']))}')">
+<section class="hero-art" style="--art: url('{e(cfg['section_dir'])}/{e(slug)}/{e(asset(t['art']))}')">
 <div class="wrap"><div class="hero-boxes">
 <h1><span>{e(t['title'])}</span></h1>
 <p class="lede">{e(t['summary'])}</p>
@@ -338,14 +341,14 @@ claude plugin install {e(slug)}@{e(cfg['marketplace'])}</code></pre>{need_line}
 {''.join(panels)}
 <p class="note"><a href="{e(source)}">Read the code on GitHub</a>{f' · <a href="{e(brief)}">The brief, as Markdown</a>' if brief else ''} · <a href="llms.txt">llms.txt</a></p>
 </section>"""
-    return page(f"{t['title']} · {cfg['title']}", body, 1, cfg, t["summary"], hero)
+    return page(f"{t['title']} · {cfg['section']}", body, 2, cfg, t["summary"], hero)
 
 
 def llms_root(cfg, tools):
-    lines = [f"# {cfg['title']}", "", f"> {cfg['tagline']} By {cfg['author']}.", "",
+    lines = [f"# {cfg['section']}", "", f"> {cfg['tagline']} By {cfg['author']}.", "",
              f"Claude Code users can install any skill: `claude plugin marketplace add {cfg['repo']}` then `claude plugin install <tool>@{cfg['marketplace']}`.", "", "## Tools", ""]
     for t in tools:
-        lines.append(f"- [{t['title']}]({t['slug']}/llms.txt): {t['summary']}")
+        lines.append(f"- [{t['title']}]({cfg['section_dir']}/{t['slug']}/llms.txt): {t['summary']}")
     return "\n".join(lines) + "\n"
 
 
@@ -358,8 +361,14 @@ def llms_tool(cfg, t):
         lines.append(f"- [Rebuild brief (Markdown)]({brief}): how it works and how to build your own version")
     lines.append(f"- [The page](./): demo and install routes")
     if t["skills"]:
-        lines.append(f"- [Source](https://github.com/{cfg['repo']}/tree/main/tools/{t['slug']}): the skill itself")
+        lines.append(f"- [Source](https://github.com/{cfg['repo']}/tree/main/{cfg['section_dir']}/{t['slug']}): the skill itself")
     return "\n".join(lines) + "\n"
+
+
+def redirect(to: str) -> str:
+    return (f'<!doctype html><meta charset="utf-8"><title>Moved</title>'
+            f'<meta http-equiv="refresh" content="0; url={e(to)}"><link rel="canonical" href="{e(to)}">'
+            f'<p>This page has moved: <a href="{e(to)}">{e(to)}</a></p>\n')
 
 
 def build_site(cfg, tools, out: Path):
@@ -371,8 +380,11 @@ def build_site(cfg, tools, out: Path):
     (out / ".nojekyll").write_text("")
     (out / "index.html").write_text(index_page(cfg, tools))
     (out / "llms.txt").write_text(llms_root(cfg, tools))
+    sec = out / cfg["section_dir"]
+    sec.mkdir()
+    (sec / "index.html").write_text(redirect("../"))
     for t in tools:
-        d = out / t["slug"]
+        d = sec / t["slug"]
         if (t["dir"] / "demo").exists():
             shutil.copytree(t["dir"] / "demo", d)
         d.mkdir(exist_ok=True)
@@ -381,6 +393,10 @@ def build_site(cfg, tools, out: Path):
         if t["snapshot"].get("surfaces", {}).get("claude-ai", {}).get("verdict") in ("works", "caveat"):
             for s in t["skills"]:
                 make_zip(t["dir"] / "skills" / s, d / f"{s}.zip")
+        # The first pages were published at /<skill>/; keep those addresses working.
+        old = out / t["slug"]
+        old.mkdir()
+        (old / "index.html").write_text(redirect(f"../{cfg['section_dir']}/{t['slug']}/"))
 
 
 def main(argv=None):
@@ -389,7 +405,7 @@ def main(argv=None):
     ap.add_argument("--out", default=str(ROOT / "_site"))
     args = ap.parse_args(argv)
     cfg = yaml.safe_load((SITE / "site.yaml").read_text())
-    tools = load_tools()
+    tools = load_tools(cfg)
     mp_file = ROOT / ".claude-plugin" / "marketplace.json"
     mp = marketplace(cfg, tools)
     if args.check:

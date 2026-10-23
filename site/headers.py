@@ -1,11 +1,11 @@
 """Schematic header drawings for the tool pages (800x450, theme-aware via CSS variables).
 
-    python3 site/headers.py            # writes tools/<tool>/demo/header.svg for every tool below
+    python3 site/headers.py            # writes skills/<tool>/demo/header.svg for every tool below
 """
 import sys
 from pathlib import Path
 
-OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parents[1] / "tools"
+OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parents[1] / "skills"
 
 STYLE = """<style>
 .s-paper{fill:var(--surface,#fff);stroke:var(--line-strong,#C9CCC6);stroke-width:1.5}

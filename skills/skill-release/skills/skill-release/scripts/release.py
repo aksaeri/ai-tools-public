@@ -98,6 +98,7 @@ class Config:
     tools: dict
     scrub: list
     allow: list
+    public_dir: str = "tools"   # folder in the public repo that holds one subfolder per tool
 
 
 @dataclass
@@ -163,7 +164,8 @@ def load_config(cfg_dir=None) -> Config:
                      for rel, src in (t.get("replace") or {}).items()},
         )
     return Config(dir=d, public_repo=_expand(raw["public_repo"]), author=raw.get("author", ""),
-                  tools=tools, scrub=load_scrub(scrub_file), allow=compile_patterns(raw.get("allow", [])))
+                  tools=tools, scrub=load_scrub(scrub_file), allow=compile_patterns(raw.get("allow", [])),
+                  public_dir=raw.get("public_dir", "tools"))
 
 
 # --- scanning -------------------------------------------------------------------
@@ -485,7 +487,7 @@ def export(cfg: Config, name: str, commit: bool = True) -> Report:
     if rep.blocking:
         raise Blocked(rep)
     tool = rep.tool
-    root = cfg.public_repo / "tools" / tool.name
+    root = cfg.public_repo / cfg.public_dir / tool.name
     skill_dir = root / "skills" / tool.skill
     if skill_dir.exists():
         shutil.rmtree(skill_dir)
@@ -521,7 +523,7 @@ def export(cfg: Config, name: str, commit: bool = True) -> Report:
         }, sort_keys=False, width=1000))
 
     if commit:
-        _git(cfg.public_repo, "add", "-A", "--", f"tools/{tool.name}")
+        _git(cfg.public_repo, "add", "-A", "--", f"{cfg.public_dir}/{tool.name}")
         if subprocess.run(["git", "-C", str(cfg.public_repo), "diff", "--cached", "--quiet"]).returncode:
             _git(cfg.public_repo, "commit", "-q", "-m", f"Export {tool.name} ({rep.ref.split(':')[-1][:12]})")
     return rep
@@ -530,7 +532,7 @@ def export(cfg: Config, name: str, commit: bool = True) -> Report:
 def status(cfg: Config) -> dict:
     out = {}
     for name, tool in cfg.tools.items():
-        snap_file = cfg.public_repo / "tools" / name / "snapshot.json"
+        snap_file = cfg.public_repo / cfg.public_dir / name / "snapshot.json"
         if not snap_file.exists():
             out[name] = "not exported"
             continue
@@ -615,7 +617,7 @@ def main(argv=None):
             print("\nNothing was written.")
             return 1
         _print_report(rep)
-        print(f"\nExported to {cfg.public_repo / 'tools' / args.tool}" + ("" if args.no_commit else " and committed locally. Nothing is pushed."))
+        print(f"\nExported to {cfg.public_repo / cfg.public_dir / args.tool}" + ("" if args.no_commit else " and committed locally. Nothing is pushed."))
         return 0
     if args.cmd == "scan":
         repo = _expand(args.repo) if args.repo else cfg.public_repo
