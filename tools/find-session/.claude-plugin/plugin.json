@@ -1,0 +1,7 @@
+{
+  "name": "find-session",
+  "description": "Locate a past Claude Code session or project from a fuzzy, half-remembered description — \"the session where we built the OpenRouter usage dashboard\".",
+  "author": {
+    "name": "Alexander Saeri"
+  }
+}
