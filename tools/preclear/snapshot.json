@@ -1,0 +1,24 @@
+{
+  "source_ref": "sha256:a49dd41f4c84fb4576bfdc3784c7c2d3027465fb901ecf1ba6fa3959fe2c2664",
+  "exported": "2026-10-23",
+  "surfaces": {
+    "claude-code": {
+      "verdict": "works",
+      "reasons": [],
+      "needs": [
+        "Python"
+      ]
+    },
+    "cowork": {
+      "verdict": "works",
+      "reasons": []
+    },
+    "claude-ai": {
+      "verdict": "caveat",
+      "reasons": [
+        "description is 276 characters; Claude chat allows 200 at most",
+        "has scripts, so code execution must be on"
+      ]
+    }
+  }
+}

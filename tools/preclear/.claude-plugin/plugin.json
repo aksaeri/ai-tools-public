@@ -1,0 +1,7 @@
+{
+  "name": "preclear",
+  "description": "Use when the user is about to /clear this session and wants nothing dropped — triggers include /preclear, \"about to clear\", \"wrap up before I clear\", \"new task, clear context\", or any stated intent…",
+  "author": {
+    "name": "Alexander Saeri"
+  }
+}
