@@ -1,0 +1,13 @@
+{
+  "about": "Twitter accounts whose posts count for a topic. x-search and x-scan --group <name> search only these accounts. Add handles without the @.",
+  "groups": {
+    "ai-commentary": {
+      "about": "An example group: people who write about AI tools and how they're used. Replace it with groups of accounts you trust.",
+      "accounts": [
+        "emollick",
+        "simonw",
+        "karpathy"
+      ]
+    }
+  }
+}

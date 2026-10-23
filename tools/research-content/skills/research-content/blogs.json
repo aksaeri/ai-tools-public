@@ -1,0 +1,33 @@
+{
+  "blogs": [
+    {
+      "name": "One Useful Thing",
+      "author": "Ethan Mollick",
+      "domain": "oneusefulthing.substack.com",
+      "clusters": [
+        "ai"
+      ]
+    },
+    {
+      "name": "Simon Willison's Weblog",
+      "author": "Simon Willison",
+      "domain": "simonwillison.net",
+      "clusters": [
+        "ai"
+      ]
+    },
+    {
+      "name": "Astral Codex Ten",
+      "author": "Scott Alexander",
+      "domain": "astralcodexten.substack.com",
+      "clusters": [
+        "ai",
+        "general"
+      ]
+    }
+  ],
+  "clusters": {
+    "ai": "AI capabilities, safety, policy, tools, and commentary.",
+    "general": "Broad-interest writing: rationality, EA, economics, research methodology, effective action."
+  }
+}
