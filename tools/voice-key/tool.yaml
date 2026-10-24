@@ -9,7 +9,7 @@ animation:
   speed: 0.2
   card_speed: 1
 how_i_use_it: |
-  I dictate most of what I write now. On my phone a small mic sits beside the keyboard in any app, so a Slack reply or a note is a tap, a sentence and a tap. On my PC a hotkey puts the cleaned-up text on the clipboard, which is how I give long instructions to Claude.
+  I dictate almost everything: instructions to Claude, replies to messages, even comments in documents. It's much faster than typing whenever a small error or the exact wording matters less. On my phone a floating mic sits beside the keyboard in any app, and on my PC a hotkey starts and stops dictation.
 where:
   - label: Android phone
     needs:
