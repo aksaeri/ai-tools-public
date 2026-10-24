@@ -53,9 +53,6 @@ to `add`, `lookup`, or `collections`:
 Inside Claude Code, just say "add <thing> to Zotero" and the skill orchestrates
 the rest, including web research for inputs without a clean identifier.
 
-**New here?** [`DEMO.md`](DEMO.md) is a guided first-run tour — follow it yourself,
-or tell Claude "walk me through the zotero-librarian demo".
-
 ## Development
 
 ```bash
@@ -70,8 +67,3 @@ ZOTLIB_NETWORK_TESTS=1 uv run pytest tests/test_network_smoke.py -q
 
 (No separate local-desktop target needed: the Zotero desktop app syncs from the
 online library, so Web-API additions appear there automatically.)
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, tests, and the test-first
-workflow. Full architecture is in `docs/2026-06-17-zotero-librarian-design.md`.
