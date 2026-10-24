@@ -232,6 +232,20 @@ test("buildSuggestRequests: hunks applied from the end, inserted words red", () 
   assert.deepEqual(reqs[1].updateTextStyle.textStyle, { foregroundColor: RED });
 });
 
+test("buildSuggestRequests: colour null leaves inserted words uncoloured (they take the paragraph's own)", () => {
+  const reqs = buildSuggestRequests(10, "has not", "have not", "t.0", { colour: null });
+  const style = reqs.find(r => r.updateTextStyle).updateTextStyle;
+  assert.deepEqual(style.textStyle, {});
+  assert.equal(style.fields, "foregroundColor");
+});
+
+test("buildSuggestRequests: uncolour clears the colour of the found span first, even with no text change", () => {
+  const reqs = buildSuggestRequests(10, "Process).", "Process).", "t.0", { colour: null, uncolour: true });
+  assert.equal(reqs.length, 1);
+  assert.deepEqual(reqs[0].updateTextStyle.range, { startIndex: 10, endIndex: 19, tabId: "t.0" });
+  assert.deepEqual(reqs[0].updateTextStyle.textStyle, {});
+});
+
 // --- validatePlan -----------------------------------------------------------
 
 test("validatePlan: accepts the three item types", () => {

@@ -248,14 +248,19 @@ export function buildBelowRequests(paraEndIndex, text, tabId, { fromHeading = fa
 
 // Requests for one find/replace, as suggestions. `at` is the doc index where `oldText` begins.
 // Hunks run last-to-first so earlier indexes stay valid; a suggested deletion keeps its index space.
-export function buildSuggestRequests(at, oldText, newText, tabId) {
+// `colour` is RED, or null to clear the colour so inserted words take the paragraph's own (--black-suggestions).
+// `uncolour` also suggests clearing the colour of the whole found span, sent first while its indexes still
+// hold; with find === replace that is the only request (recolouring stray red text an earlier run left).
+export function buildSuggestRequests(at, oldText, newText, tabId, { colour = RED, uncolour = false } = {}) {
   const reqs = [];
+  if (uncolour)
+    reqs.push({ updateTextStyle: { range: range(at, at + oldText.length, tabId), textStyle: {}, fields: "foregroundColor" } });
   for (const h of diffHunks(oldText, newText).reverse()) {
     const s = at + h.start, e = at + h.end;
     if (h.insert) {
       reqs.push({ insertText: { location: { index: e, ...(tabId ? { tabId } : {}) }, text: h.insert } });
       reqs.push({
-        updateTextStyle: { range: range(e, e + h.insert.length, tabId), textStyle: { foregroundColor: RED }, fields: "foregroundColor" },
+        updateTextStyle: { range: range(e, e + h.insert.length, tabId), textStyle: colour ? { foregroundColor: colour } : {}, fields: "foregroundColor" },
       });
     }
     if (e > s) reqs.push({ deleteContentRange: { range: range(s, e, tabId) } });
@@ -430,13 +435,14 @@ function preview(t, item, loc) {
   if (item.type === "below") return `red text below paragraph containing "${item.after}":\n    ${item.text}`;
   const old = t.text.slice(loc.start, loc.end);
   let shown = old;
+  if (item.uncolour && old === item.replace) return `suggest: uncolour "${old}"`;
   for (const h of diffHunks(old, item.replace).reverse())
     shown = shown.slice(0, h.start) + (h.end > h.start ? `[-${old.slice(h.start, h.end)}]` : "") +
       (h.insert ? `[+${h.insert}]` : "") + shown.slice(h.end);
   return `suggest: ${shown}`;
 }
 
-function apply(documentId, plan, { tabId, dryRun, noBackup }) {
+function apply(documentId, plan, { tabId, dryRun, noBackup, blackSuggestions }) {
   const errs = validatePlan(plan);
   plan.filter(i => i.type === "comment").forEach(i => {
     const r = formatComment(i.text);
@@ -535,7 +541,8 @@ function apply(documentId, plan, { tabId, dryRun, noBackup }) {
       return suggest
         .map(i => ({ i, loc: locateItem(t, i) }))
         .sort((x, y) => y.loc.start - x.loc.start)
-        .flatMap(({ i, loc }) => buildSuggestRequests(loc.start, t.text.slice(loc.start, loc.end), i.replace, tab));
+        .flatMap(({ i, loc }) => buildSuggestRequests(loc.start, t.text.slice(loc.start, loc.end), i.replace, tab,
+          { colour: blackSuggestions ? null : RED, uncolour: !!i.uncolour }));
     }, "SUGGEST");
     const ids = [...new Set((res.suggestionResponses ?? []).flatMap(r => r.createdSuggestionIds ?? []))];
     journal.suggestions.push(...ids);
@@ -668,7 +675,7 @@ function read(documentId, { tabId }) {
 const HELP = `gdocs-suggest: comment on, add red text to, and suggest edits in a Google Doc via gws.
 
   node gdocs_suggest.js read  <doc-id-or-url> [--tab <tabId>]
-  node gdocs_suggest.js apply <doc-id-or-url> <plan.json> [--tab <tabId>] [--dry-run] [--no-backup]
+  node gdocs_suggest.js apply <doc-id-or-url> <plan.json> [--tab <tabId>] [--dry-run] [--no-backup] [--black-suggestions]
   node gdocs_suggest.js undo  <journal.json | doc-id-or-url>
 
 plan.json is an array of items:
@@ -679,6 +686,8 @@ Any item may add "occurrence": n to pick the nth match of text that repeats.
 
 Every quote/after/find must appear exactly once in the tab (or set "occurrence"). The whole plan is checked
 before anything is written; --dry-run shows what would happen without writing.
+--black-suggestions leaves suggested insertions uncoloured instead of red; a suggest item with
+"uncolour": true (find may equal replace) also suggests clearing stray red from the found text.
 
 Protection: before writing, apply copies the doc to a "gdocs-suggest backups" folder in My Drive
 (skip with --no-backup) and starts a journal in ~/.gdocs-suggest/journal. Direct edits can only add
@@ -687,7 +696,8 @@ original text is intact. undo removes the run's comments, pending suggestions an
 
 function main(argv) {
   const [cmd, doc, ...rest] = argv;
-  const opt = { tabId: undefined, dryRun: rest.includes("--dry-run"), noBackup: rest.includes("--no-backup") };
+  const opt = { tabId: undefined, dryRun: rest.includes("--dry-run"), noBackup: rest.includes("--no-backup"),
+    blackSuggestions: rest.includes("--black-suggestions") };
   const t = rest.indexOf("--tab");
   if (t !== -1) opt.tabId = rest[t + 1];
   if (!cmd || cmd === "--help" || cmd === "-h" || !doc) return console.log(HELP);

@@ -58,11 +58,13 @@ Red text and the `[Claude]` prefix are the AI markers. Comments and suggestions 
 
 ## Writing each type
 
+- **Drafted prose goes through `writing-for-humans` first.** If a `below` item drafts something a person will read as writing (an email, a message, a paragraph of a report, a decisions list), invoke `writing-for-humans` and run its checks before you put the text in the plan file. Do the same for comments longer than a line. Red text in someone's Doc is still writing for them. A plan file is not an exemption.
+
 - **Comments** are one sentence, or a one-sentence first paragraph, a blank line (`\n\n`), then detail. The script adds `[Claude] ` and rejects a first paragraph with two sentences. Quote the smallest span the comment is about.
 - **Below** text is plain prose only. Don't style it, add labels or prefixes like "Suggested:". The script colours it red and it takes the paragraph's own font and spacing; under a heading it becomes Normal text. For a multi-paragraph addition, separate paragraphs with `\n`. Leave the original paragraph and any `{TBC}` marker in place, because the author deletes what they don't keep.
 - **Suggest**: `find` is the original wording (one paragraph, no chips or footnote marks), `replace` is the whole corrected span. The script diffs them word by word and strikes whole words only. Changes one or two words apart merge into a single suggestion. When most of a sentence changes, use `below` instead, because a dense run of suggestions is hard to review.
 
-While pending, Google shows suggested words in its suggestion colour; they turn red when accepted.
+While pending, Google shows suggested words in its suggestion colour; they turn red when accepted. When the user wants accepted suggestions to stay black (final tweaks to a finished doc), pass `--black-suggestions` to `apply`. A suggest item with `"uncolour": true` (find may equal replace) also suggests clearing stray red that an earlier run left in that span.
 
 ## Choosing a type
 
