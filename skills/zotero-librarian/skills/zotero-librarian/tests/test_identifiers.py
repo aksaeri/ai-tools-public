@@ -7,6 +7,9 @@ from zotlib.identifiers import detect
     ("arXiv:2502.09288", "arxiv", "2502.09288"),
     ("2502.13294", "arxiv", "2502.13294"),
     ("https://arxiv.org/abs/2502.09288v2", "arxiv", "2502.09288v2"),
+    # arXiv DOIs (any case) route to the arXiv resolver, not Crossref
+    ("https://doi.org/10.48550/ARXIV.2108.01415", "arxiv", "2108.01415"),
+    ("10.48550/arXiv.2202.01037", "arxiv", "2202.01037"),
     ("https://link.springer.com/article/10.1007/s10462-026-11517-6",
      "doi", "10.1007/s10462-026-11517-6"),
     ("https://dl.acm.org/doi/10.1145/3790096", "doi", "10.1145/3790096"),

@@ -86,7 +86,8 @@ def _arxiv(arxiv_id):
     year = published[:4]
     authors = [_full_name(a.findtext("a:name", default="", namespaces=ns))
                for a in entry.findall("a:author", ns)]
-    doi = entry.findtext("arxiv:doi", default="", namespaces=ns) or ""
+    doi = (entry.findtext("arxiv:doi", default="", namespaces=ns)
+           or f"10.48550/arXiv.{bare}")
     payload = {
         "itemType": "preprint",
         "title": title,
@@ -94,7 +95,6 @@ def _arxiv(arxiv_id):
         "date": year,
         "url": f"https://arxiv.org/abs/{bare}",
         "repository": "arXiv",
-        "archiveID": f"arXiv:{bare}",
         "abstractNote": summary,
         "DOI": doi,
         "_source": "arxiv",

@@ -65,8 +65,23 @@ def test_arxiv_maps_to_payload(monkeypatch):
                                 "firstName": "Toby", "lastName": "Shevlane"}
     assert p["date"] == "2025"
     assert p["url"] == "https://arxiv.org/abs/2511.11595"
-    assert p["archiveID"] == "arXiv:2511.11595"
     assert p["_source"] == "arxiv"
+
+
+def test_arxiv_sets_no_archive_id(monkeypatch):
+    # APA prints archiveID as "(arXiv:2511.11595)" after the title; the
+    # house style wants no version/ID label there.
+    monkeypatch.setattr(R.requests, "get",
+                        lambda url, **k: FakeResp(text=ARXIV_XML))
+    assert "archiveID" not in R.resolve("arxiv", "2511.11595")
+
+
+def test_arxiv_without_journal_doi_gets_arxiv_doi(monkeypatch):
+    # arXiv's own DOI form: 10.48550/arXiv.<id> (https://info.arxiv.org/help/doi.html)
+    xml = ARXIV_XML.replace("<arxiv:doi>10.0000/zzz</arxiv:doi>", "")
+    monkeypatch.setattr(R.requests, "get",
+                        lambda url, **k: FakeResp(text=xml))
+    assert R.resolve("arxiv", "2511.11595v2")["DOI"] == "10.48550/arXiv.2511.11595"
 
 
 OPENLIB = {

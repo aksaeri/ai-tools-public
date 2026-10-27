@@ -4,6 +4,8 @@ import re
 ARXIV_URL_RE = re.compile(r'(?:arxiv\.org/abs/|arxiv:)\s*([0-9]{4}\.[0-9]{4,5}(?:v\d+)?)', re.I)
 # bare arXiv id as the whole string
 ARXIV_BARE_RE = re.compile(r'^([0-9]{4}\.[0-9]{4,5}(?:v\d+)?)$')
+# arXiv's DataCite DOI, 10.48550/arXiv.<id> (often stored upper-case)
+ARXIV_DOI_RE = re.compile(r'10\.48550/arxiv\.([0-9]{4}\.[0-9]{4,5}(?:v\d+)?)', re.I)
 DOI_RE = re.compile(r'(10\.\d{4,9}/[^\s"<>]+)', re.I)
 PMID_RE = re.compile(r'(?:pmid:\s*|pubmed\.ncbi\.nlm\.nih\.gov/)(\d{1,9})', re.I)
 ISBN_RE = re.compile(r'(97[89][\d-]{10,16}\d|\d[\d-]{8,14}[\dxX])')
@@ -20,7 +22,7 @@ def detect(text):
     if not s:
         return (None, None)
 
-    m = ARXIV_URL_RE.search(s) or ARXIV_BARE_RE.match(s)
+    m = ARXIV_URL_RE.search(s) or ARXIV_BARE_RE.match(s) or ARXIV_DOI_RE.search(s)
     if m:
         return ("arxiv", m.group(1))
 

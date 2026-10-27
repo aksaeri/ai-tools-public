@@ -1,7 +1,7 @@
 {
-  "source_ref": "56ad6cefe2a9fa6d5d55f92285fc8982352c615b",
-  "source_date": "2026-08-21",
-  "exported": "2026-10-24",
+  "source_ref": "ef4abcdd89d1bc057c3ed67526a713cf948ca0e4",
+  "source_date": "2026-10-27",
+  "exported": "2026-10-27",
   "surfaces": {
     "claude-code": {
       "verdict": "works",
