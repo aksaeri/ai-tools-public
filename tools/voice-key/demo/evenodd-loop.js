@@ -51,7 +51,8 @@
     const st = bars.map(() => ({ s: 'on', t: 0 }));
     const pick = pred => { const c = []; st.forEach((x, i) => pred(x, i) && c.push(i)); return c.length ? c[Math.floor(r() * c.length)] : -1; };
     for (let k = 0; k < bars.length - KEEP; k++) st[pick(x => x.s === 'on')].s = 'off';
-    let acc = 0, lastOut = -1;
+    // start with a swap already due, so the first bar moves on the first frame even at slow speeds
+    let acc = SWAP_SECONDS, lastOut = -1;
 
     function quad(ctx, b, t0, t1) {
       const p0 = b.c - b.w / 2, p1 = b.c + b.w / 2, pt = (p, t) => [b.nx * p + b.dx * t, b.ny * p + b.dy * t];
