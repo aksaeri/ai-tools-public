@@ -169,7 +169,7 @@ def page(title, body, depth, cfg, desc="", hero="", sec=None, scripts=()):
 <link rel="stylesheet" href="{up}style.css">
 </head>
 <body>
-<header class="top"><div class="wrap"><a class="wordmark" href="{home}">{e(cfg['author'])}</a><a class="sitelink" href="{home}">{e(cfg['title'])}</a>{f'<a class="sitelink" href="{home}#{e(sec["dir"])}">{e(sec["title"])}</a>' if sec else ''}{THEME_SWITCH}</div></header>
+<header class="top"><div class="wrap"><a class="wordmark" href="https://aksaeri.com/">{e(cfg['author'])}</a><a class="sitelink" href="{home}">{e(cfg['title'])}</a>{f'<a class="sitelink" href="{home}#{e(sec["dir"])}">{e(sec["title"])}</a>' if sec else ''}{THEME_SWITCH}</div></header>
 {hero}
 <main class="wrap">
 {body}
