@@ -1,0 +1,7 @@
+{
+  "name": "generate-image",
+  "version": "1.0.0",
+  "description": "Generate raster images (scenes, illustrations, avatars, photos) with Gemini image models",
+  "private": true,
+  "type": "module"
+}

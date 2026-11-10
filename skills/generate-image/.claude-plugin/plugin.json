@@ -1,0 +1,7 @@
+{
+  "name": "generate-image",
+  "description": "Makes pictures (scenes, illustrations, avatars, photos) with Gemini image models.",
+  "author": {
+    "name": "Alexander Saeri"
+  }
+}

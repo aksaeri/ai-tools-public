@@ -1,0 +1,14 @@
+title: generate-image
+header: demo/header.svg
+order: 8
+summary: Makes pictures (scenes, illustrations, avatars, photos) with Gemini image models.
+how_i_use_it: |
+  I use it for pictures only an image model can make: scene illustrations for books I'm reading, small avatars for my Claude sessions, and printed card art. Diagrams I have Claude draw as SVG instead, and abstract or cover art I have it make in code. Most pictures cost about three cents.
+media: []
+brief: demo/generate-image-brief.md
+requires:
+- Node 18 or later
+- A Gemini API key (GEMINI_API_KEY); about 3 cents an image on the default model
+- Tested on Linux only, not on Windows or macOS
+art: demo/art.webp
+art_title: Cloth skyline, red twill
