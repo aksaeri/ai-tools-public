@@ -97,7 +97,7 @@ You can't hear any of it. So the tools set levels by measurement, and your part 
 - Timing: start a whoosh when the movement starts; start a pop, tick or thud on the frame the thing lands. Tie them to the same times as the pictures (`data-start="n04:thirty"`).
 - Prefer the gaps between narration lines, and never put an effect on the word the sentence stresses.
 - For a real-world sound the set lacks (a door, rain, a page turning), `sfx.js find "page turn" --out sfx/page.mp3` fetches a short public-domain recording and notes where it came from.
-- The made sounds are synthesised and nobody has listened to them. Say so when you hand the video over.
+- The made sounds are synthesised. The set itself has been listened to and approved by a person. What nobody has heard is your use of them in this video, so say so when you hand it over.
 
 **The mix.** `render.js` does it: voice lines as narrated, music as above, effects and clip sound at the volume given, then the whole brought to -14 LUFS (the level YouTube plays at; `--loudness -16` for a podcast-style target) with peaks held under -1 dB. It reports under `sound`:
 - `loudness_lufs`: should be within about 1 of the target.
@@ -132,7 +132,7 @@ After the final render, make one more sheet from the finished file (`render.js o
 - Pictures arriving after the voice has moved on.
 - A video that just stops, with no final hold.
 - A voice with nothing under it, or an effect on every movement.
-- Saying it is finished without having looked at the frames, or without saying the sound was never listened to.
+- Saying it is finished without having looked at the frames, or without saying that you could not listen to the finished sound.
 
 ## 8. When the user reacts
 

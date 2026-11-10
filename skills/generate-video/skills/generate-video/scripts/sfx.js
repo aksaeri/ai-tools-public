@@ -12,8 +12,9 @@
 // recordings released as CC0 (public domain, no credit required) and saves the
 // first short one, with a note of where it came from.
 //
-// Nobody making the video can hear these. Use few, each with a cause on screen,
-// and tell the user they were not listened to.
+// The set has been listened to and approved by a person (November 2026). The
+// agent placing them still can't hear the result: use few, each with a cause
+// on screen, and tell the user the finished mix was not listened to.
 
 import fs from "node:fs";
 import path from "node:path";
@@ -175,7 +176,7 @@ async function main() {
         s.variants.forEach((_, i) => made.push(make(name, i + 1, path.join(a.outDir, s.variants.length > 1 ? `${name}-${i + 1}.wav` : `${name}.wav`))));
       }
     } else made.push(make(a.what, a.variant, a.out));
-    console.log(JSON.stringify({ success: true, made, note: "Synthesised; nobody has listened to these. Use few, and say so to the user." }, null, 2));
+    console.log(JSON.stringify({ success: true, made, note: "Use few, each with a cause on screen. You can't hear how they sit in the video, so tell the user the finished sound was not listened to." }, null, 2));
     return;
   }
   const result = await find(a);
