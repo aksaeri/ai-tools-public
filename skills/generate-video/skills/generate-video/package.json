@@ -1,0 +1,7 @@
+{
+  "name": "generate-video",
+  "version": "1.0.0",
+  "description": "Make videos: a video model for realistic clips, or compositions rendered from animated HTML with narration",
+  "private": true,
+  "type": "module"
+}

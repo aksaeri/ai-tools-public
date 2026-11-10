@@ -1,0 +1,32 @@
+{
+  "source_ref": "68c44041a18e7814aa44327cd51274cb2d926250",
+  "source_date": "2026-11-10",
+  "exported": "2026-11-10",
+  "surfaces": {
+    "claude-code": {
+      "verdict": "works",
+      "reasons": [],
+      "needs": [
+        "Node",
+        "ffmpeg"
+      ]
+    },
+    "cowork": {
+      "verdict": "caveat",
+      "reasons": [
+        "needs ffmpeg installed inside Cowork's virtual machine",
+        "calls outside services, so network access must be allowed for your workspace"
+      ]
+    },
+    "claude-ai": {
+      "verdict": "no",
+      "reasons": [
+        "needs ffmpeg, which Claude chat can't run",
+        "description is 495 characters; Claude chat allows 200 at most",
+        "has scripts, so code execution must be on",
+        "calls outside services; Claude chat's sandbox may block them",
+        "needs your own API key or settings"
+      ]
+    }
+  }
+}

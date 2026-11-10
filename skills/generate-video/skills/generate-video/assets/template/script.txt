@@ -1,0 +1,3 @@
+# One spoken line per line. "[pause 1]" adds a second of silence before the next line.
+This is the first line. Each scene carries one idea.
+This is the second line. Hold it long enough to read.

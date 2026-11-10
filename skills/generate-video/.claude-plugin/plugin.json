@@ -1,0 +1,7 @@
+{
+  "name": "generate-video",
+  "description": "Makes videos: short realistic clips from a video model, or narrated explainers and animations that Claude builds itself.",
+  "author": {
+    "name": "Alexander Saeri"
+  }
+}
