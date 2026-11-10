@@ -6,6 +6,7 @@ Sound, brought in line with a second research round (voice, music, effects, mixi
 
 - **Narration lines are trimmed and levelled.** Each line loses the silence at its ends and is brought to -20 LUFS, so lines start on time and match in loudness. All lines are made again once after this update. `--redo 03,07` makes named lines again.
 - **The mix is set by measurement.** Music marked `data-role="music"` is levelled 12 LU under the voice and lowered a further 8 dB while the voice speaks. The finished sound is brought to -14 LUFS with peaks under -1 dB (`--loudness` changes or disables that). `render.js` reports loudness, peak and how far the music sits under the voice, with warnings.
+- **Default voice** is now `en-au-storyteller-1` (Australian, low and calm), picked by ear from 44; it was `Kore`. `--voice` takes any named voice or any id from Google's voice library.
 - **Sound effects** (`scripts/sfx.js`): a synthesised set (whoosh, pop, tick, thud, puff, riser, chime), and a search of Openverse for short public-domain recordings.
 - **Music** is asked for as a bed under a voice by default (`--plain` turns that off), with the ending placed; a note of the prompt and terms is saved beside the file.
 - **Guide:** a Sound section in `references/composing.md`: voices and style, music, effects, and how to check a mix nobody can hear.

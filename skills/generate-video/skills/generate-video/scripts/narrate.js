@@ -2,7 +2,7 @@
 // Turn a narration script into speech, one sound file per line, and work out
 // when each line starts so the pictures can be timed to the voice.
 //
-//   node narrate.js script.txt --out-dir audio [--voice Kore] [--style "calm, warm, unhurried"]
+//   node narrate.js script.txt --out-dir audio [--voice Kore] [--style "warm, clear, lively pace"]
 //        [--model flash|lite] [--start 0.5] [--gap 0.4] [--redo 03,07] [--tag label] [--dry-run]
 //
 // script.txt: one spoken line per line. Blank lines and lines starting with #
@@ -45,7 +45,10 @@ const MODELS = {
 };
 const PRICES_CHECKED = "2026-11-10";
 const PRICE_DOUBLES = Date.UTC(2027, 0, 1);
-const DEFAULT_VOICE = "Kore";
+// An Australian voice from Google's voice library: a woman, low pitch, "reflective,
+// calm, and reassuring". Chosen by ear from 44. --voice takes any of Google's
+// thirty named voices (Kore, Charon, ...) or any library id.
+const DEFAULT_VOICE = "en-au-storyteller-1";
 const PARALLEL = 3;
 // Groq Whisper, for word times: $0.04 an hour of audio, each request billed as at least 10 s.
 const WHISPER = { id: "whisper-large-v3-turbo", usdPerHour: 0.04, minSeconds: 10 };
