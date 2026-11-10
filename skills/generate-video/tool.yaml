@@ -4,7 +4,11 @@ order: 9
 summary: "Makes videos: short realistic clips from a video model, or narrated explainers and animations that Claude builds itself."
 how_i_use_it: |
   I ask any session for a short clip, like a five-second video of something to share with friends, and get a file back without opening a web tool. When I want something explained, Claude builds the video itself, with a voice, music and animation it writes. The skill picks between the two by asking whether the video has to look real or has to explain.
-media: []
+media:
+  - video: demo/video/film-or-compose.mp4
+    poster: demo/video/film-or-compose.jpg
+    sound: true
+    caption: "Both routes in one video, made with this skill: a filmed fox clip from the video model beside a drawn fox that Claude animated, with generated narration, music and effects. 44 seconds; it cost about 45 cents, 35 of them for the clip."
 brief: demo/generate-video-brief.md
 requires:
 - Node 22 or later, ffmpeg and Google Chrome

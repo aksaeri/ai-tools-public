@@ -224,10 +224,12 @@ def media_html(t):
     for m in t.get("media", []):
         cap = f"<figcaption>{e(m.get('caption', ''))}</figcaption>" if m.get("caption") else ""
         if m.get("video"):
+            # A narrated video (sound: true) starts with sound and plays once; silent clips loop muted.
+            attrs = "controls playsinline" if m.get("sound") else "controls muted playsinline loop"
             def vid(src, poster, cls=""):
                 p = f' poster="{e(asset(poster))}"' if poster else ""
                 c = f' class="{cls}"' if cls else ""
-                return f'<video{c} controls muted playsinline loop preload="none"{p}><source src="{e(asset(src))}" type="video/mp4"></video>'
+                return f'<video{c} {attrs} preload="none"{p}><source src="{e(asset(src))}" type="video/mp4"></video>'
             if m.get("narrow_video"):
                 # A stacked version for phones, where the wide layout is too small to read.
                 v = vid(m["video"], m.get("poster"), "only-wide") + vid(m["narrow_video"], m.get("narrow_poster"), "only-narrow")
