@@ -41,6 +41,16 @@
       "name": "find-session",
       "source": "./skills/find-session",
       "description": "Finds a past Claude Code session from a half-remembered description and gives you the command to resume it."
+    },
+    {
+      "name": "generate-image",
+      "source": "./skills/generate-image",
+      "description": "Makes pictures (scenes, illustrations, avatars, photos) with Gemini image models."
+    },
+    {
+      "name": "generate-video",
+      "source": "./skills/generate-video",
+      "description": "Makes videos: short realistic clips from a video model, or narrated explainers and animations that Claude builds itself."
     }
   ]
 }
