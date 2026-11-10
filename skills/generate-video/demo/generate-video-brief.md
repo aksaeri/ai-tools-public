@@ -37,4 +37,4 @@ Claude picks a route first, and says which one it took.
 - Node 22 or later, ffmpeg and Google Chrome.
 - A Gemini API key, `GEMINI_API_KEY`. `OPENROUTER_API_KEY` (for other video models) and `GROQ_API_KEY` (for word timings and a speech check) are optional.
 - About 35 cents per 5-second clip, 8 cents per piece of music, and about 1.4 cents a minute of narration. Effects and rendering are free.
-- Tested on Linux only, not on Windows or macOS. The synthesised sound effects haven't been listened to by a person yet.
+- Tested on Linux only, not on Windows or macOS.

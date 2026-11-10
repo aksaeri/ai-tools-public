@@ -10,6 +10,6 @@ requires:
 - Node 22 or later, ffmpeg and Google Chrome
 - A Gemini API key (GEMINI_API_KEY). OPENROUTER_API_KEY and GROQ_API_KEY are optional
 - About 35 cents per 5-second clip, 8 cents for music and about 1.4 cents a minute of narration
-- Tested on Linux only, not on Windows or macOS. The synthesised sound effects haven't been listened to yet
+- Tested on Linux only, not on Windows or macOS
 art: demo/art.webp
 art_title: Phantom jam
