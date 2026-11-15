@@ -51,6 +51,11 @@
       "name": "generate-video",
       "source": "./skills/generate-video",
       "description": "Makes videos: short realistic clips from a video model, or narrated explainers and animations that Claude builds itself."
+    },
+    {
+      "name": "tool-demo",
+      "source": "./skills/tool-demo",
+      "description": "Packages a tool so other people can see what it does and rebuild it themselves, with a page of use cases, a rebuild brief and a short narrated video for each use case."
     }
   ]
 }
