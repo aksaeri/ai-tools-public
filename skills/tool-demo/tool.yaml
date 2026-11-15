@@ -1,0 +1,18 @@
+title: tool-demo
+header: demo/header.svg
+order: 10
+summary: Packages a tool so other people can see what it does and rebuild it themselves, with a page of use cases, a rebuild brief and a short narrated video for each use case.
+how_i_use_it: |
+  I asked for a page explaining Claude Code and Cowork to friends, with a video for each use case. Claude wrote the page, checked the Cowork claims against Anthropic's docs, and had eleven short narrated videos made with mocked-up screens, for under a dollar in total. I reacted to the first few, and the rest followed in the same look.
+surfaces:
+  cowork:
+    verdict: caveat
+    reasons:
+    - the page and brief work anywhere; the videos need the generate-video skill, which needs ffmpeg and Google Chrome
+media: []
+brief: demo/tool-demo-brief.md
+requires:
+- Python 3
+- For the videos, the generate-video skill (Node 22+, ffmpeg, Google Chrome and a Gemini API key); about 9 cents a video
+art: demo/art.webp
+art_title: Hurried copy, cream
