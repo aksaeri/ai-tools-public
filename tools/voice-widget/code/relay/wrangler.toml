@@ -1,0 +1,26 @@
+# voice-widget relay. Deploy with relay/deploy.sh (dry run by default).
+
+name = "voice-widget"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+# Top-level keys must stay ABOVE the first [table] header, or TOML puts them
+# inside that table and wrangler silently ignores them.
+workers_dev = false
+preview_urls = false
+routes = [{ pattern = "voice.aksaeri.com", custom_domain = true }]
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+# API routes reach the Worker first; everything else is served straight from public/.
+run_worker_first = ["/v1/*", "/admin/*"]
+
+[[durable_objects.bindings]]
+name = "DEPLOYMENTS"
+class_name = "DeploymentDO"
+
+# SQLite-backed Durable Objects (available on the Workers Free plan).
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["DeploymentDO"]

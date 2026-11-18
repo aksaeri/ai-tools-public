@@ -1,0 +1,4 @@
+.wrangler/
+node_modules/
+# copied from ../package by deploy.sh
+public/v1/voice-widget.js

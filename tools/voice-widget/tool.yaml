@@ -1,0 +1,31 @@
+title: Voice widget
+order: 2
+summary: A microphone button for text boxes on web pages. People talk instead of typing, and their words appear in the box to check and edit. Built for open-ended survey questions.
+code: true
+how_i_use_it: |
+  I've embedded it in my own websites, where I want people to be able to leave comments by voice. I've also tried it as an experiment in research surveys, to help people give their thoughts on long open-text questions. My deployment has Groq's Zero Data Retention turned on.
+where:
+  - label: Any web page with a text box
+    needs:
+      - One script tag, and a data-voice attribute on each box that should get a button
+      - An HTTPS page, so the browser allows the microphone
+    notes:
+      - Styles are sealed off from the page; colours and shape are set with CSS variables.
+  - label: Qualtrics surveys
+    needs:
+      - An account that's allowed to add JavaScript to questions
+    notes:
+      - Paste the snippet into a text-entry question. Add both the live and the Preview web addresses to the deployment's allowed sites.
+  - label: Your relay
+    tag: false
+    status: What it needs
+    needs:
+      - A Cloudflare account (free plan) for the Worker and its budget store
+      - A Groq API key with Zero Data Retention turned on, which only the relay holds
+brief: demo/voice-widget-brief.md
+llms: demo/llms.txt
+art: demo/art.webp
+art_title: Hurried copy, light
+links:
+  - label: Try the live demo
+    href: https://voice.aksaeri.com/

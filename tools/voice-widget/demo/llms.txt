@@ -1,0 +1,22 @@
+# Voice widget: how it works
+
+> A microphone button for text boxes on web pages, built for open-ended survey answers (Qualtrics). The respondent speaks; a small relay sends the clip to Groq Whisper and the text lands in the box for them to edit. Each survey has its own budget and list of allowed sites. This file is a summary. For rebuilding, use the full brief: [voice-widget-brief.md](voice-widget-brief.md). The code is published beside it.
+
+## The system in brief
+
+- Page script: one file, no dependencies. A script tag attaches a button to each `textarea[data-voice]` / `input[data-voice]`, or call `VoiceWidget.attach(el, options)`. Shadow DOM isolates its styles. It records up to 90 s with MediaRecorder, posts the clip, and inserts the text at the cursor using the native value setter plus `input`/`change` events.
+- Relay: a Cloudflare Worker. `POST /v1/transcribe?d=<deployment>` (raw audio body) returns `{text, seconds, cost_usd, remaining_usd}`, and `GET /v1/status?d=<deployment>` says whether to show the button. It holds the Groq key and calls `whisper-large-v3-turbo` (`language=en`, `verbose_json`). It stores no audio or text.
+- Budgets: one Durable Object per deployment reserves the cost of a maximum-length clip before calling Groq, then settles with Groq's reported duration (10 s minimum billed). A deployment that runs out switches its buttons off; typing still works.
+- Access: an exact list of allowed sites per deployment, a per-visitor rate limit, and a clip-length cap.
+- Qualtrics: a paste-in question script that attaches to the question's text box and sets embedded data `voice_used`.
+- Live demo: https://voice.aksaeri.com (the page script there is byte for byte the published one).
+
+## Rules the design keeps
+
+1. The API key stays on the relay, never in the page.
+2. One key, many budgets: each deployment has its own cap and allowed sites.
+3. Reserve before calling the model, and settle with the real duration afterwards, in a store that handles one request at a time.
+4. Store no audio or text, and use the provider's zero data retention.
+5. Speech is a draft: insert at the cursor, let people edit, and keep typing available.
+6. Set values the way frameworks expect, and fire input and change events.
+7. Let the host page style the button through CSS custom properties and `::part()`, never by reaching into it.

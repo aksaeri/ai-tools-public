@@ -1,0 +1,37 @@
+{
+  "deployments": {
+    "demo": {
+      "budget_usd": 0.5,
+      "active": true,
+      "allowed_origins": [
+        "https://voice.aksaeri.com"
+      ],
+      "max_seconds": 90,
+      "rate_per_ip_per_min": 4,
+      "prompt": "",
+      "notice": "Your voice is sent to Groq to be turned into text. Nothing is stored."
+    },
+    "my-survey": {
+      "budget_usd": 2.0,
+      "active": true,
+      "allowed_origins": [
+        "https://yourorg.qualtrics.com"
+      ],
+      "max_seconds": 90,
+      "rate_per_ip_per_min": 6,
+      "prompt": "",
+      "notice": "Your voice is sent to Groq to be turned into text. Nothing is stored."
+    },
+    "dev": {
+      "budget_usd": 0.25,
+      "active": true,
+      "allowed_origins": [
+        "http://localhost:8787"
+      ],
+      "max_seconds": 90,
+      "rate_per_ip_per_min": 20,
+      "prompt": "",
+      "notice": ""
+    }
+  }
+}

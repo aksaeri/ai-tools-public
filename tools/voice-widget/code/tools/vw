@@ -1,0 +1,342 @@
+#!/usr/bin/env python3
+"""vw: manage voice-widget relay deployments.
+
+  vw list                                  deployments in relay/deployments.json
+  vw add NAME --budget 2 --origins a,b [--prompt-file F] [--notice TEXT]
+         [--max-seconds 90] [--rate 6] [--inactive] [--dry-run]
+  vw set NAME key=value [key=value ...] [--dry-run]
+         keys: budget_usd (budget), active, allowed_origins (origins, comma list),
+               max_seconds, rate_per_ip_per_min (rate), prompt (prompt=@file reads a file), notice
+  vw prompt-check NAME                     estimate prompt tokens (warn > 200, Groq max 224)
+  vw usage [--json] [--base URL]           live spend from the relay (needs VW_ADMIN_TOKEN in .env)
+  vw reset NAME [--yes] [--base URL]       zero a deployment's spend (dry run without --yes)
+  vw deploy [--yes]                        relay/deploy.sh (dry run without --yes)
+  vw secrets [--yes]                       push GROQ_API_KEY and ADMIN_TOKEN (dry run without --yes)
+
+Edits to deployments.json are local; run `vw deploy --yes` to publish them.
+Python stdlib only.
+"""
+import argparse
+import json
+import math
+import os
+import re
+import subprocess
+import sys
+import urllib.error
+import urllib.parse
+import urllib.request
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+RELAY = ROOT / "relay"
+DEPLOYMENTS = RELAY / "deployments.json"
+ENV_FILE = ROOT / ".env"
+DEFAULT_BASE = "https://voice.aksaeri.com"
+NAME_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,62}$")
+ORIGIN_RE = re.compile(r"^https?://[A-Za-z0-9.-]+(:\d{1,5})?$")
+PROMPT_WARN_TOKENS = 200
+PROMPT_MAX_TOKENS = 224
+KEY_ALIASES = {"budget": "budget_usd", "origins": "allowed_origins", "rate": "rate_per_ip_per_min"}
+KEY_ORDER = ["budget_usd", "active", "allowed_origins", "max_seconds", "rate_per_ip_per_min", "prompt", "notice"]
+
+
+def die(msg, code=1):
+    print(f"vw: {msg}", file=sys.stderr)
+    sys.exit(code)
+
+
+# --- deployments.json --------------------------------------------------------
+
+def load():
+    with open(DEPLOYMENTS) as f:
+        return json.load(f)
+
+
+def save(cfg):
+    text = json.dumps(cfg, indent=2, ensure_ascii=False) + "\n"
+    tmp = DEPLOYMENTS.with_suffix(".json.tmp")
+    tmp.write_text(text)
+    os.replace(tmp, DEPLOYMENTS)
+
+
+def ordered(dep):
+    out = {k: dep[k] for k in KEY_ORDER if k in dep}
+    out.update({k: v for k, v in dep.items() if k not in out})
+    return out
+
+
+def parse_origins(text):
+    origins = [o.strip().rstrip("/") for o in text.split(",") if o.strip()]
+    if not origins:
+        die("give at least one origin, e.g. https://yourorg.qualtrics.com")
+    for o in origins:
+        if o != "*" and not ORIGIN_RE.match(o):
+            die(f"not an origin (scheme://host[:port], no path): {o}")
+    return origins
+
+
+def estimate_tokens(text):
+    return math.ceil(len(text) / 3.5)
+
+
+def check_prompt(name, prompt, quiet_ok=False):
+    toks = estimate_tokens(prompt)
+    if toks > PROMPT_MAX_TOKENS:
+        print(f"ERROR {name}: prompt is about {toks} tokens; Groq allows {PROMPT_MAX_TOKENS}. Shorten it.")
+        return 2
+    if toks > PROMPT_WARN_TOKENS:
+        print(f"WARNING {name}: prompt is about {toks} tokens (over {PROMPT_WARN_TOKENS}); Groq allows {PROMPT_MAX_TOKENS}.")
+        return 1
+    if not quiet_ok:
+        print(f"OK {name}: prompt is {len(prompt)} characters, about {toks} tokens (limit {PROMPT_MAX_TOKENS}).")
+    return 0
+
+
+def coerce(key, value):
+    if key == "budget_usd":
+        try:
+            v = float(value)
+        except ValueError:
+            die(f"budget_usd must be a number, got {value!r}")
+        if v < 0:
+            die("budget_usd must be 0 or more")
+        return v
+    if key == "active":
+        low = value.lower()
+        if low in ("true", "1", "yes", "on"):
+            return True
+        if low in ("false", "0", "no", "off"):
+            return False
+        die(f"active must be true or false, got {value!r}")
+    if key == "allowed_origins":
+        return parse_origins(value)
+    if key in ("max_seconds", "rate_per_ip_per_min"):
+        try:
+            v = int(value)
+        except ValueError:
+            die(f"{key} must be a whole number, got {value!r}")
+        if v < (1 if key == "max_seconds" else 0):
+            die(f"{key} is too small: {v}")
+        return v
+    if key in ("prompt", "notice"):
+        if key == "prompt" and value.startswith("@"):
+            return Path(value[1:]).read_text().strip()
+        return value
+    die(f"unknown key {key!r}; use one of: {', '.join(KEY_ORDER)}")
+
+
+def show(name, dep):
+    print(json.dumps({name: dep}, indent=2, ensure_ascii=False))
+
+
+def cmd_list(args):
+    deps = load()["deployments"]
+    rows = [("NAME", "ACTIVE", "BUDGET", "MAX_S", "RATE/MIN", "PROMPT", "ORIGINS")]
+    for name, d in deps.items():
+        p = d.get("prompt", "")
+        rows.append((
+            name, "yes" if d.get("active") else "NO", f"${d.get('budget_usd', 0):.2f}",
+            str(d.get("max_seconds", "")), str(d.get("rate_per_ip_per_min", "")),
+            f"~{estimate_tokens(p)} tok" if p else "-", ", ".join(d.get("allowed_origins", [])),
+        ))
+    widths = [max(len(r[i]) for r in rows) for i in range(len(rows[0]) - 1)]
+    for r in rows:
+        print("  ".join(c.ljust(w) for c, w in zip(r, widths)) + "  " + r[-1])
+
+
+def cmd_add(args):
+    if not NAME_RE.match(args.name):
+        die("name must be lowercase letters, digits and dashes (e.g. my-survey)")
+    cfg = load()
+    if args.name in cfg["deployments"]:
+        die(f"{args.name} already exists; use `vw set {args.name} key=value`")
+    prompt = Path(args.prompt_file).read_text().strip() if args.prompt_file else ""
+    dep = {
+        "budget_usd": coerce("budget_usd", str(args.budget)),
+        "active": not args.inactive,
+        "allowed_origins": parse_origins(args.origins),
+        "max_seconds": args.max_seconds,
+        "rate_per_ip_per_min": args.rate,
+        "prompt": prompt,
+        "notice": args.notice if args.notice is not None
+        else "Your voice is sent to Groq to turn it into text. The recording is not kept.",
+    }
+    if prompt and check_prompt(args.name, prompt) == 2:
+        die("prompt too long; not saved")
+    if args.dry_run:
+        print("[dry run] would add:")
+        show(args.name, dep)
+        return
+    cfg["deployments"][args.name] = dep
+    save(cfg)
+    show(args.name, dep)
+    print("Saved to relay/deployments.json. Publish with: vw deploy (dry run), then vw deploy --yes")
+
+
+def cmd_set(args):
+    cfg = load()
+    deps = cfg["deployments"]
+    if args.name not in deps:
+        die(f"no deployment named {args.name}; see `vw list`")
+    dep = dict(deps[args.name])
+    for pair in args.pairs:
+        if "=" not in pair:
+            die(f"expected key=value, got {pair!r}")
+        key, value = pair.split("=", 1)
+        key = KEY_ALIASES.get(key.strip(), key.strip())
+        dep[key] = coerce(key, value)
+    if dep.get("prompt") and check_prompt(args.name, dep["prompt"], quiet_ok=True) == 2:
+        die("prompt too long; not saved")
+    dep = ordered(dep)
+    if args.dry_run:
+        print("[dry run] would change to:")
+        show(args.name, dep)
+        return
+    deps[args.name] = dep
+    save(cfg)
+    show(args.name, dep)
+    print("Saved to relay/deployments.json. Publish with: vw deploy (dry run), then vw deploy --yes")
+
+
+def cmd_prompt_check(args):
+    deps = load()["deployments"]
+    if args.name not in deps:
+        die(f"no deployment named {args.name}; see `vw list`")
+    prompt = deps[args.name].get("prompt", "")
+    if not prompt:
+        print(f"OK {args.name}: no prompt set.")
+        return
+    sys.exit(check_prompt(args.name, prompt))
+
+
+# --- relay admin -------------------------------------------------------------
+
+def admin_token():
+    if not ENV_FILE.exists():
+        die(f"no .env at {ENV_FILE}; add VW_ADMIN_TOKEN=... (see .env.example)")
+    for line in ENV_FILE.read_text().splitlines():
+        if line.startswith("VW_ADMIN_TOKEN="):
+            value = line.split("=", 1)[1].strip().strip('"').strip("'")
+            if value:
+                return value
+    die("missing line in .env: VW_ADMIN_TOKEN=<value> (see .env.example)")
+
+
+def admin_request(base, path, method="GET"):
+    req = urllib.request.Request(
+        base.rstrip("/") + path, method=method,
+        headers={"Authorization": f"Bearer {admin_token()}", "User-Agent": "vw/1", "Accept": "application/json"},
+        data=b"" if method == "POST" else None,
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as r:
+            return json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        try:
+            msg = json.loads(e.read()).get("message", "")
+        except Exception:
+            msg = ""
+        die(f"relay answered {e.code} {msg}".strip())
+    except urllib.error.URLError as e:
+        die(f"could not reach {base}: {e.reason}")
+
+
+def cmd_usage(args):
+    data = admin_request(args.base, "/admin/usage")
+    if args.json:
+        print(json.dumps(data, indent=2))
+        return
+    rows = [("NAME", "ACTIVE", "BUDGET", "SPENT", "RESERVED", "LEFT", "USED", "REQUESTS", "MINUTES", "LAST USED")]
+    for name, u in data.get("deployments", {}).items():
+        budget, spent, res = u["budget_usd"], u["spent_usd"], u["reserved_usd"]
+        left = max(0.0, budget - spent - res)
+        pct = f"{100 * spent / budget:.0f}%" if budget else "-"
+        rows.append((
+            name, "yes" if u["active"] else "NO", f"${budget:.2f}", f"${spent:.4f}", f"${res:.4f}",
+            f"${left:.4f}", pct, str(u["requests"]), f"{u['seconds'] / 60:.1f}",
+            (u["last_used"] or "never")[:16].replace("T", " "),
+        ))
+    widths = [max(len(r[i]) for r in rows) for i in range(len(rows[0]))]
+    for r in rows:
+        print("  ".join(c.ljust(w) for c, w in zip(r, widths)).rstrip())
+
+
+def cmd_reset(args):
+    if args.name not in load()["deployments"]:
+        die(f"no deployment named {args.name}; see `vw list`")
+    if not args.yes:
+        print(f"[dry run] would POST {args.base.rstrip('/')}/admin/reset?d={args.name} (zero its spend). Add --yes to do it.")
+        return
+    data = admin_request(args.base, "/admin/reset?d=" + urllib.parse.quote(args.name), method="POST")
+    print(f"Reset {data.get('deployment', args.name)}: spend is now $0.")
+
+
+def run_deploy(extra):
+    script = RELAY / "deploy.sh"
+    sys.exit(subprocess.call([str(script), *extra]))
+
+
+def cmd_deploy(args):
+    run_deploy(["--yes"] if args.yes else ["--dry-run"])
+
+
+def cmd_secrets(args):
+    run_deploy(["secrets", "--yes"] if args.yes else ["secrets", "--dry-run"])
+
+
+def main(argv=None):
+    p = argparse.ArgumentParser(prog="vw", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    sub.add_parser("list", help="show deployments").set_defaults(fn=cmd_list)
+
+    a = sub.add_parser("add", help="add a deployment")
+    a.add_argument("name")
+    a.add_argument("--budget", type=float, required=True, help="hard cap in USD")
+    a.add_argument("--origins", required=True, help="comma-separated exact origins")
+    a.add_argument("--prompt-file", help="text file with the word list / prompt")
+    a.add_argument("--notice", help="notice line shown under the button")
+    a.add_argument("--max-seconds", type=int, default=90)
+    a.add_argument("--rate", type=int, default=6, help="requests per IP per minute")
+    a.add_argument("--inactive", action="store_true", help="add switched off")
+    a.add_argument("--dry-run", action="store_true")
+    a.set_defaults(fn=cmd_add)
+
+    s = sub.add_parser("set", help="change fields of a deployment")
+    s.add_argument("name")
+    s.add_argument("pairs", nargs="+", metavar="key=value")
+    s.add_argument("--dry-run", action="store_true")
+    s.set_defaults(fn=cmd_set)
+
+    pc = sub.add_parser("prompt-check", help="estimate prompt token count")
+    pc.add_argument("name")
+    pc.set_defaults(fn=cmd_prompt_check)
+
+    u = sub.add_parser("usage", help="live spend per deployment")
+    u.add_argument("--json", action="store_true")
+    u.add_argument("--base", default=DEFAULT_BASE, help=f"relay URL (default {DEFAULT_BASE})")
+    u.set_defaults(fn=cmd_usage)
+
+    r = sub.add_parser("reset", help="zero a deployment's spend")
+    r.add_argument("name")
+    r.add_argument("--yes", action="store_true", help="really do it (default is a dry run)")
+    r.add_argument("--base", default=DEFAULT_BASE)
+    r.set_defaults(fn=cmd_reset)
+
+    d = sub.add_parser("deploy", help="deploy the relay (dry run unless --yes)")
+    g = d.add_mutually_exclusive_group()
+    g.add_argument("--yes", action="store_true")
+    g.add_argument("--dry-run", action="store_true")
+    d.set_defaults(fn=cmd_deploy)
+
+    se = sub.add_parser("secrets", help="push Worker secrets from .env (dry run unless --yes)")
+    se.add_argument("--yes", action="store_true")
+    se.set_defaults(fn=cmd_secrets)
+
+    args = p.parse_args(argv)
+    args.fn(args)
+
+
+if __name__ == "__main__":
+    main()
