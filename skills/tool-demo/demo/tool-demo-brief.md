@@ -30,3 +30,11 @@ Claude reads the tool itself, asks you how you actually use it, lists the use ca
 - Python 3 for the folder script.
 - A way to render narrated HTML animations to video. The original uses the generate-video skill: Node 22+, ffmpeg, Google Chrome and a Gemini API key, at about 9 cents a video.
 - Tested on Linux only.
+
+## Reference code
+
+The published skill is the reference implementation: [tool-demo on GitHub](https://github.com/aksaeri/ai-tools-public/tree/main/skills/tool-demo/skills/tool-demo). Start from it and change what your setup needs. Where to look:
+
+- `SKILL.md`: the steps, the rules for videos and the privacy check.
+- `references/brief-template.md` and `references/video-brief-common.md`: the brief's shape and the rules every video follows.
+- `scripts/scaffold.py`: lays out a package folder with one slot per use case.

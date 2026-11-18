@@ -39,7 +39,7 @@ demo/
 2. **Get the owner's own words.** "How I use it" is in the owner's voice, so never invent it. Ask the owner (or the session that owns the tool) for two or three sentences based only on what they've actually done with it, and show the result to them before it goes public.
 3. **List the use cases.** One line each, concrete: "turns a folder of receipts into a spreadsheet", not "helps with finance". Four to ten is plenty. Each use case gets a paragraph and a video.
 4. **Check facts that aren't yours.** When the page compares the tool with someone else's product, check those claims against that product's current official docs, and write "I found nothing in the docs about X" rather than "it can't do X".
-5. **Write the brief** from `references/brief-template.md`: the problem, what it does, components, decisions worth keeping, what you need. It describes behaviour and decisions, so a reader can rebuild it on their own setup.
+5. **Write the brief** from `references/brief-template.md`: the problem, what it does, components, decisions worth keeping, what you need. It describes behaviour and decisions, so a reader can rebuild it on their own setup. When the code is published too, end with a **Reference code** section that links it as the implementation to start from and says which file settles which decision. The brief explains why; the code shows how.
 6. **Make the videos** (below).
 7. **Check for private details** (below) across the page, the brief and every video frame.
 8. **Publish** where `local.md` says, and get the owner's yes before anything goes public.
