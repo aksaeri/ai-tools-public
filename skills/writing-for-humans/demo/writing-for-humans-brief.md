@@ -50,3 +50,11 @@ The skill gets most of its voice from a folder of ten to twenty pieces you wrote
 - Start with "Every piece" and the reader line. They work on any Claude surface, with no files at all.
 - Build the samples folder next. It's the part that makes the output sound like you.
 - Add the review rounds last, for the writing that matters most.
+
+## Reference code
+
+The published skill is the reference implementation: [writing-for-humans on GitHub](https://github.com/aksaeri/ai-tools-public/tree/main/skills/writing-for-humans/skills/writing-for-humans). Start from it and change what your setup needs. Where to look:
+
+- `SKILL.md`: the rules for every piece, and the three levels.
+- `reviewing.md`: the review rounds for the highest level.
+- `example.md`: a worked example of a briefing written this way.

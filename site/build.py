@@ -344,8 +344,16 @@ claude plugin install {e(slug)}@{e(cfg['marketplace'])}</code></pre>{need_line}
         else:
             tab("ai", "Claude chat", cannot("claude-ai", "Claude chat"))
     if brief:
-        prompt = f"Read {brief_url} and help me build my own version of {t['title']} for my setup. Ask me what I use first."
-        tab("own", "Build your own", f"""<p>Give the brief to your own Claude and adapt it to what you use. <a href="{e(brief)}">Read the brief</a>.</p>
+        # With published code, the code is the reference implementation and the brief explains its decisions.
+        tree = f"https://github.com/{cfg['repo']}/tree/main/{t['sec']['dir']}/{slug}"
+        code_url = f"{tree}/skills/{slug}" if t["skills"] else (f"{tree}/code" if t.get("code") else "")
+        if code_url:
+            prompt = f"Read {brief_url}, use the code at {code_url} as the reference implementation, and help me build my own version of {t['title']} for my setup. Ask me what I use first."
+            lead = "Give the brief and the code to your own Claude and adapt them to what you use."
+        else:
+            prompt = f"Read {brief_url} and help me build my own version of {t['title']} for my setup. Ask me what I use first."
+            lead = "Give the brief to your own Claude and adapt it to what you use."
+        tab("own", "Build your own", f"""<p>{lead} <a href="{e(brief)}">Read the brief</a>.</p>
 <div class="copyrow"><pre class="prompt">{e(prompt)}</pre><button class="btn copy" type="button">Copy</button></div>
 <p class="note copied" aria-live="polite"></p>""")
     source = f"https://github.com/{cfg['repo']}/tree/main/{t['sec']['dir']}/{slug}"

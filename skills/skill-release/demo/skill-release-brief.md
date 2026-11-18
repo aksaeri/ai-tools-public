@@ -67,3 +67,11 @@ The check also reports where the skill will run:
 - The scan is the core: your patterns plus the built-in checks above, run over the transformed output rather than the source.
 - Keep the settings file format small. Rewrites are literal text swaps, and "allow" patterns excuse false positives such as "MIT License".
 - Test it on a fake skill that contains a planted hostname, an email address and an installed path. Confirm the export refuses it and writes nothing.
+
+## Reference code
+
+The published skill is the reference implementation: [skill-release on GitHub](https://github.com/aksaeri/ai-tools-public/tree/main/skills/skill-release/skills/skill-release). Start from it and change what your setup needs. Where to look:
+
+- `SKILL.md`: the check, export and review steps.
+- `scripts/release.py`: the privacy patterns, the per-surface fit check, the clean export and the pre-push scan.
+- `references/setup.md`: the private settings files it reads, and what goes in them.

@@ -65,3 +65,13 @@ Claude gives the research to a smaller, cheaper Claude model (the original uses 
 - Start with `resolve` for DOIs and arXiv IDs. Those two cover most academic references.
 - Add `add` with the field check next, and the research subagent last, because it depends on the check being strict.
 - The Python library `pyzotero` handles Zotero's item templates and uploads.
+
+## Reference code
+
+The published skill is the reference implementation: [zotero-librarian on GitHub](https://github.com/aksaeri/ai-tools-public/tree/main/skills/zotero-librarian/skills/zotero-librarian). Start from it and change what your setup needs. Where to look:
+
+- `SKILL.md`: when to use each route, and the rules for abstracts, press releases and edits.
+- `zotlib/identifiers.py`: how a DOI, arXiv ID, ISBN or link is recognised.
+- `zotlib/resolvers.py`: the lookups, and how their results become Zotero item types.
+- `zotlib/zotero_client.py`: writing to a personal or group library through the Zotero API.
+- `tests/`: the cases it has to get right.

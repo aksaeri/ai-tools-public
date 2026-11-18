@@ -71,3 +71,11 @@ When this was written (October 2026), Google labelled pinned comments and sugges
 - Start with `read` and the plan checker. They need no write access, and the plan format is the part worth getting right.
 - Then add the three request builders, the safety check and the after-write check, before you point it at a real document.
 - The colour, the `[Claude]` prefix and the one-sentence rule are constants, so change them to suit your own conventions.
+
+## Reference code
+
+The published skill is the reference implementation: [gdocs-suggest on GitHub](https://github.com/aksaeri/ai-tools-public/tree/main/skills/gdocs-suggest/skills/gdocs-suggest). Start from it and change what your setup needs. Where to look:
+
+- `SKILL.md`: the plan Claude writes before touching a document, and the rules for colours and comments.
+- `scripts/gdocs_suggest.js`: how each kind of change maps to Google Docs API requests, and the dry run.
+- `scripts/gdocs_suggest.test.js`: the cases it has to get right, which are worth keeping as a checklist.

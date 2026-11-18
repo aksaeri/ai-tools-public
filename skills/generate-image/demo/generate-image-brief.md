@@ -33,3 +33,11 @@ Claude writes a prompt, runs the script, and looks at the result before showing 
 - A Gemini API key, `GEMINI_API_KEY`.
 - About 3 cents an image on the default model.
 - Tested on Linux only, not on Windows or macOS.
+
+## Reference code
+
+The published skill is the reference implementation: [generate-image on GitHub](https://github.com/aksaeri/ai-tools-public/tree/main/skills/generate-image/skills/generate-image). Start from it and change what your setup needs. Where to look:
+
+- `SKILL.md`: the routing table, the model choice and how to keep a series consistent.
+- `scripts/generate.js`: the API call, the price table, the size and aspect checks that fail before paying, and the usage log.
+- `scripts/usage-report.js` and `scripts/cleanup.js`: spend totals, and safe removal of old images.

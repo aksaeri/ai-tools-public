@@ -38,3 +38,13 @@ Claude picks a route first, and says which one it took.
 - A Gemini API key, `GEMINI_API_KEY`. `OPENROUTER_API_KEY` (for other video models) and `GROQ_API_KEY` (for word timings and a speech check) are optional.
 - About 35 cents per 5-second clip, 8 cents per piece of music, and about 1.4 cents a minute of narration. Effects and rendering are free.
 - Tested on Linux only, not on Windows or macOS.
+
+## Reference code
+
+The published skill is the reference implementation: [generate-video on GitHub](https://github.com/aksaeri/ai-tools-public/tree/main/skills/generate-video/skills/generate-video). Start from it and change what your setup needs. Where to look:
+
+- `SKILL.md`: choosing between filming and composing, the commands and the costs.
+- `references/composing.md` and `references/filming.md`: the craft of each route.
+- `scripts/render.js` with `scripts/lib/virtual-time.js` and `chrome.js`: the controlled clock and frame-by-frame rendering; `scripts/lib/check.js` finds unreadable text, and `scripts/lib/mix.js` balances voice, music and effects.
+- `scripts/narrate.js`, `music.js`, `sfx.js` and `film.js`: narration with word times, music, effects, and video-model clips.
+- `assets/template/`: the starting composition.

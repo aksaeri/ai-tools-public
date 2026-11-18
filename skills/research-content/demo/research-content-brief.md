@@ -57,3 +57,12 @@ The task guides cover three common shapes of request: scholarship, buying or cho
 - Start with the map, the scouts and the lead format, using only web search and fetch. That's most of the value.
 - Add one source helper at a time, in the order your topics need them. YouTube captions are usually the first.
 - Keep the account list and the blog list as plain files you edit, separate from the instructions.
+
+## Reference code
+
+The published skill is the reference implementation: [research-content on GitHub](https://github.com/aksaeri/ai-tools-public/tree/main/skills/research-content/skills/research-content). Start from it and change what your setup needs. Where to look:
+
+- `SKILL.md`: the loop, what each scout must bring back, and the sources web search handles badly.
+- `components/`: one small client per source (`openalex.py` for papers and citations, `serpapi.py`, `youtube_search.py` and `youtube_transcript.py`, `tikhub.py` for Twitter and Reddit).
+- `tasks/`: extra instructions for buying decisions, scholarship and local-language research.
+- `x_accounts.json` and `blogs.json`: example lists of accounts and blogs to watch; replace them with your own.

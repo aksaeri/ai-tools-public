@@ -46,3 +46,10 @@ Claude Code saves every session as a `.jsonl` file under `~/.claude/projects/<fo
 
 - Start with the transcript search. It needs nothing but Python and the files Claude Code already writes.
 - Add an index later, if you keep many long-lived sessions and want names and summaries for them.
+
+## Reference code
+
+The published skill is the reference implementation: [find-session on GitHub](https://github.com/aksaeri/ai-tools-public/tree/main/skills/find-session/skills/find-session). Start from it and change what your setup needs. Where to look:
+
+- `SKILL.md`: when to search, and the shape of the answer it hands back.
+- `scripts/search_transcripts.py`: which session folders it searches, how it scores matches, and how it builds the resume command.

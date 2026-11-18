@@ -48,3 +48,10 @@ The file is merged, never overwritten: unresolved entries stay, and resolved one
 
 - The hook is the part people skip, and without it the file is never read back. Install it first.
 - If you run several long-lived sessions, give each its own threads file, and say in a local settings file how the skill should tell them apart.
+
+## Reference code
+
+The published skill is the reference implementation: [preclear on GitHub](https://github.com/aksaeri/ai-tools-public/tree/main/skills/preclear/skills/preclear). Start from it and change what your setup needs. Where to look:
+
+- `SKILL.md`: the sweep, the entry format, and parking quiet threads.
+- `scripts/session_start.py`: the hook that prints the threads file into a new session and stops at `# Parked`.
