@@ -44,3 +44,14 @@ Open-ended survey questions get short answers, because typing a long answer is t
 - Cost: Groq charges about US$0.04 per hour of audio, so a one-minute answer costs well under a tenth of a cent. A hundred people giving five one-minute answers each costs about US$0.35.
 - An HTTPS page, because browsers only allow the microphone on secure pages. For Qualtrics, an account that's allowed to add JavaScript to questions.
 - Tested mainly in desktop Chrome, plus simulated microphones in automated tests. Check Safari, iPhones and Android with your own audience before relying on it.
+
+## Reference code
+
+The published code is the reference implementation: [voice-widget on GitHub](https://github.com/aksaeri/ai-tools-public/tree/main/tools/voice-widget/code). The page script and the relay source are byte for byte what runs at voice.aksaeri.com. Start from them and change what your setup needs. Where to look:
+
+- `relay/src/budget.js` and `relay/src/deployment-do.js`: the budget store. These hold the cost model (10-second minimum), reserving a maximum-length clip before the call and settling with Groq's reported duration, the 5-minute expiry for stale reservations, and the per-visitor rate limit, all in one Durable Object per deployment.
+- `relay/src/index.js`, `corsFor()` and the route handler: the allowed-sites check. It covers the exact-origin match, cross-origin headers only for listed sites, and `Sec-Fetch-Site: same-origin` standing in for the missing `Origin` on same-site GETs.
+- `relay/src/index.js`, the transcribe route: how audio reaches Groq. The raw body is checked for size and length, sent as one multipart request to `whisper-large-v3-turbo` (`language=en`, `verbose_json`, the deployment's word list only for clips of 2 seconds or more), and held only in memory. Logs carry no text.
+- `package/voice-widget.js`: the page script. It covers the Shadow DOM button, recording, insertion through the native value setter, plain-language errors, and the options described in `package/README.md`.
+- `qualtrics/question-groq.js`: the Qualtrics snippet. It loads the script once per page, attaches to the question's text box through `this.getQuestionContainer()` with no jQuery, and sets embedded data `voice_used`.
+- `tools/vw`: the command-line tool. Each deployment is a block in `relay/deployments.json`, and `vw` edits them, warns when a word list is too long for Whisper's prompt, reads spend from `/admin/usage`, and deploys (dry run by default).
