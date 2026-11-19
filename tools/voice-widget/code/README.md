@@ -19,7 +19,7 @@ people's audio, and build your own.
 ## What's running at voice.aksaeri.com
 
 - `package/voice-widget.js` is byte for byte the script served at
-  https://voice.aksaeri.com/v1/voice-widget.js. Its SHA-256 is `6c04889117c6f2a38352e6f906dc8a19fa5b07308707bbe7934aaf5c26242ea8`.
+  https://voice.aksaeri.com/v1/voice-widget.js. Its SHA-256 is `0175fc53fc358359551252d9f602986c40d9facc057c9514b24f95b47ed46655`.
   Check it yourself: `curl -s https://voice.aksaeri.com/v1/voice-widget.js | sha256sum`.
 - `relay/src/` is the source of the Cloudflare Worker behind it, which transcribes with Groq's
   `whisper-large-v3-turbo` model. Nobody outside can download a Worker's deployed code, so this
@@ -30,7 +30,7 @@ people's audio, and build your own.
 
 ## What happens to the audio
 
-1. The browser records only between the person pressing the button and pressing Stop (90 seconds at most).
+1. The browser records only between the person pressing the button and pressing Stop (3 minutes at most).
 2. The clip is sent to the relay. The relay checks the page's site is on the deployment's list, the deployment has budget left, and the person isn't sending too often.
 3. The relay forwards the clip to Groq (`whisper-large-v3-turbo`) and returns the text. It keeps the audio in memory only for that request and never writes it or the text anywhere. Its logs hold only the deployment name, size, length, cost and status.
 4. Turn on Zero Data Retention in your Groq account so Groq doesn't keep it either.

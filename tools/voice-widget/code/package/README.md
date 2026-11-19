@@ -19,7 +19,7 @@ Options on the script tag:
 | `data-target` | none | Extra CSS selector to attach to, e.g. `#q1 textarea` |
 | `data-notice` | "Your voice is sent to Groq to turn it into text. Nothing is stored." | Small print under the button; `""` hides it |
 | `data-label` | "Speak your answer" | Button text |
-| `data-max-seconds` | 90 | Recording stops by itself at this length; match the deployment's `max_seconds` |
+| `data-max-seconds` | 180 | Recording stops by itself at this length (3 minutes by default); match the deployment's `max_seconds`. In the last 20 seconds the timer counts down ("stops in 12 s") and a line says when it will stop |
 | `data-accent` | built-in green | Button colour (hex, rgb or hsl), e.g. `#17879B` |
 | `data-accent-dark` | same as `data-accent` | Button colour when the visitor's system is in dark mode |
 | `data-size` | normal | `small` gives a quieter, more compact button (34 px tall instead of 44 px) |

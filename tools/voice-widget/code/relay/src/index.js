@@ -96,7 +96,7 @@ export function createHandler(deployments) {
 
     if (!dep.active) return done(err('inactive', 403, H));
 
-    const maxSeconds = Number(dep.max_seconds) || 90;
+    const maxSeconds = Number(dep.max_seconds) || 180;
     const hdrSeconds = parseFloat(request.headers.get('X-Audio-Seconds') || '');
     const clientSeconds = Number.isFinite(hdrSeconds) && hdrSeconds >= 0 ? hdrSeconds : null;
     if (clientSeconds !== null && clientSeconds > maxSeconds + LENGTH_GRACE_SECONDS) return done(err('too_long', 413, H));
@@ -171,7 +171,7 @@ export function createHandler(deployments) {
     const u = await stubFor(env, name).usage();
     const budget = Number(dep.budget_usd) || 0;
     const left = Math.max(0, budget - u.spent_usd - u.reserved_usd);
-    const need = cost(Number(dep.max_seconds) || 90, pricePerHour(env));
+    const need = cost(Number(dep.max_seconds) || 180, pricePerHour(env));
     return json(200, { active: true, available: left + 1e-12 >= need }, cors);
   }
 

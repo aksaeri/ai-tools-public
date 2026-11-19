@@ -28,7 +28,7 @@
     endpoint: sd.endpoint ? slash(sd.endpoint) : baseOf((script && script.src) || location.href),
     notice: sd.notice != null ? sd.notice : 'Your voice is sent to Groq to turn it into text. Nothing is stored.',
     label: sd.label || 'Speak your answer',
-    maxSeconds: +sd.maxSeconds > 0 ? +sd.maxSeconds : 90,
+    maxSeconds: +sd.maxSeconds > 0 ? +sd.maxSeconds : 180,
     position: sd.position === 'inline' ? 'inline' : 'below',
     size: sd.size === 'small' ? 'small' : 'normal',
     buttonStyle: sd.buttonStyle === 'outline' ? 'outline' : 'filled',   // data-button-style
@@ -46,6 +46,8 @@
   var DEBUG = sd.debug === '1';
 
   // ---------------------------------------------------------------- words
+  var WARN_S = 20;            // countdown and warning in the last 20 seconds
+  function span(s) { return s >= 60 && s % 60 === 0 ? (s / 60) + (s === 60 ? ' minute' : ' minutes') : s + ' seconds'; }
   var PRESS = window.matchMedia && matchMedia('(pointer: coarse)').matches ? 'Tap' : 'Press';
   var T = {
     idle: PRESS + ' the button and talk. ' + PRESS + ' Stop when you’re done.',
@@ -53,15 +55,15 @@
     listening: 'Listening…',
     sending: 'Turning speech into text…',
     added: 'Added to your answer. You can edit it.',
-    addedMax: function (s) { return 'Added to your answer. Recordings stop after ' + s + ' seconds, so ' + PRESS.toLowerCase() + ' the button again to keep going.'; },
+    addedMax: function (s) { return 'Added to your answer. Recordings stop after ' + span(s) + ', so ' + PRESS.toLowerCase() + ' the button again to keep going.'; },
     cancelled: 'Recording cancelled.',
-    maxNote: function (s) { return 'Recordings stop after ' + s + ' seconds, so ' + PRESS.toLowerCase() + ' the button again to keep going.'; },
+    maxNote: function (s) { return 'Recordings stop after ' + span(s) + ', so ' + PRESS.toLowerCase() + ' the button again to keep going.'; },
     short: 'That was too short to hear. ' + PRESS + ' the button, talk, then ' + PRESS.toLowerCase() + ' Stop.',
     nothing: 'No words came through. Please try again, a little closer to the microphone.',
     closed: 'Voice typing has closed for this survey. You can still type your answer.',
     notSetUp: 'Voice typing isn’t set up for this page.',
     wait: 'Please wait a moment and try again.',
-    tooLong: function (s) { return 'That recording was too long. Please keep each one under ' + s + ' seconds.'; },
+    tooLong: function (s) { return 'That recording was too long. Please keep each one under ' + span(s) + '.'; },
     failed: 'Something went wrong turning your speech into text. Please try again, or type your answer.',
     offline: 'Couldn’t reach voice typing. Check your internet connection and try again.',
     denied: 'Your browser blocked the microphone. To use voice typing, allow the microphone for this site (usually through an icon in the address bar), then ' + PRESS.toLowerCase() + ' the button again.',
@@ -389,8 +391,8 @@
       var rec = this.rec = new Rec(function (level, t) {
         self.mf.style.width = Math.round(level * 100) + '%';
         var left = Math.ceil(max - t);
-        self.tm.textContent = fmt(t) + (left <= 10 ? ' · stops in ' + Math.max(0, left) + ' s' : '');
-        if (left <= 10 && !self.warned) { self.warned = true; self.vw.classList.add('warn'); self.msg.textContent = T.stopsAt(max); }
+        self.tm.textContent = fmt(t) + (left <= WARN_S ? ' · stops in ' + Math.max(0, left) + ' s' : '');
+        if (left <= WARN_S && !self.warned) { self.warned = true; self.vw.classList.add('warn'); self.msg.textContent = T.stopsAt(max); }
         if (t >= max && self.state === 'rec') { self.autoStopped = true; self.stop(); }
       });
       try {
@@ -490,7 +492,7 @@
     for (var k in DEF) o[k] = DEF[k];
     for (k in (opts || {})) if (opts[k] !== undefined) o[k] = opts[k];
     o.endpoint = slash(o.endpoint);
-    o.maxSeconds = +o.maxSeconds > 0 ? +o.maxSeconds : 90;
+    o.maxSeconds = +o.maxSeconds > 0 ? +o.maxSeconds : 180;
     if (!o.deployment) { warn('no deployment given (data-deployment on the script tag, or {deployment} in attach()).'); return null; }
     var w = new Widget(el, o);
     w.handle = {

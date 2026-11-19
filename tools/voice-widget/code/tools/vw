@@ -3,7 +3,7 @@
 
   vw list                                  deployments in relay/deployments.json
   vw add NAME --budget 2 --origins a,b [--prompt-file F] [--notice TEXT]
-         [--max-seconds 90] [--rate 6] [--inactive] [--dry-run]
+         [--max-seconds 180] [--rate 6] [--inactive] [--dry-run]
   vw set NAME key=value [key=value ...] [--dry-run]
          keys: budget_usd (budget), active, allowed_origins (origins, comma list),
                max_seconds, rate_per_ip_per_min (rate), prompt (prompt=@file reads a file), notice
@@ -297,7 +297,7 @@ def main(argv=None):
     a.add_argument("--origins", required=True, help="comma-separated exact origins")
     a.add_argument("--prompt-file", help="text file with the word list / prompt")
     a.add_argument("--notice", help="notice line shown under the button")
-    a.add_argument("--max-seconds", type=int, default=90)
+    a.add_argument("--max-seconds", type=int, default=180)
     a.add_argument("--rate", type=int, default=6, help="requests per IP per minute")
     a.add_argument("--inactive", action="store_true", help="add switched off")
     a.add_argument("--dry-run", action="store_true")

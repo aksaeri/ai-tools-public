@@ -4,7 +4,7 @@
 
 ## The system in brief
 
-- Page script: one file, no dependencies. A script tag attaches a button to each `textarea[data-voice]` / `input[data-voice]`, or call `VoiceWidget.attach(el, options)`. Shadow DOM isolates its styles. It records up to 90 s with MediaRecorder, posts the clip, and inserts the text at the cursor using the native value setter plus `input`/`change` events.
+- Page script: one file, no dependencies. A script tag attaches a button to each `textarea[data-voice]` / `input[data-voice]`, or call `VoiceWidget.attach(el, options)`. Shadow DOM isolates its styles. It records up to 3 minutes (with a countdown in the last 20 seconds) with MediaRecorder, posts the clip, and inserts the text at the cursor using the native value setter plus `input`/`change` events.
 - Relay: a Cloudflare Worker. `POST /v1/transcribe?d=<deployment>` (raw audio body) returns `{text, seconds, cost_usd, remaining_usd}`, and `GET /v1/status?d=<deployment>` says whether to show the button. It holds the Groq key and calls `whisper-large-v3-turbo` (`language=en`, `verbose_json`). It stores no audio or text.
 - Budgets: one Durable Object per deployment reserves the cost of a maximum-length clip before calling Groq, then settles with Groq's reported duration (10 s minimum billed). A deployment that runs out switches its buttons off; typing still works.
 - Access: an exact list of allowed sites per deployment, a per-visitor rate limit, and a clip-length cap.

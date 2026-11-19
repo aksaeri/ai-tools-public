@@ -9,7 +9,7 @@ Open-ended survey questions get short answers, because typing a long answer is t
 ## What it does
 
 1. A "Speak your answer" button sits under (or beside) a text box.
-2. The respondent presses it, talks for up to 90 seconds, and presses Stop. They can cancel instead, and then nothing is sent.
+2. The respondent presses it, talks for up to 3 minutes, and presses Stop. In the last 20 seconds a countdown shows, so they can finish their sentence. They can cancel instead, and then nothing is sent.
 3. The clip goes to a relay, which checks the page is allowed to use it and the survey has budget left, then sends the clip to Groq's Whisper model (`whisper-large-v3-turbo`).
 4. The text comes back in a second or two and is added to the box at the cursor. The respondent can edit it like anything they typed, speak again to add more, or just type.
 5. When a survey's budget is used up, every button for that survey switches off and says so. Typing still works.
