@@ -1,8 +1,8 @@
 # voice-widget v1: hosted relay with budgets + embeddable script
 
-Status: the original design spec (2026-11-06). Options added later (styling, icon-only, cancel
-button, state API) are documented in package/README.md. This is the contract between the relay
-and the package.
+Status: a dated record of the original v1 design (2026-11-06), kept as written. Values here may be
+out of date (for example, recordings now stop at 3 minutes, not 90 s). For current behaviour, defaults
+and options added later (styling, icon-only, cancel button, state API), see package/README.md.
 
 ## Intent
 A mic button that attaches to any text box on any site and fills it with transcribed speech.
