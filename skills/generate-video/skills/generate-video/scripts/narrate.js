@@ -2,7 +2,7 @@
 // Turn a narration script into speech, one sound file per line, and work out
 // when each line starts so the pictures can be timed to the voice.
 //
-//   node narrate.js script.txt --out-dir audio [--voice Kore] [--style "warm, clear, lively pace"]
+//   node narrate.js script.txt --out-dir audio [--voice pool|Walnut|Kore] [--style "warm, clear, lively pace"]
 //        [--model flash|lite] [--start 0.5] [--gap 0.4] [--redo 03,07] [--tag label] [--dry-run]
 //
 // script.txt: one spoken line per line. Blank lines and lines starting with #
@@ -26,7 +26,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
-import { pathToFileURL } from "node:url";
+import { pathToFileURL, fileURLToPath } from "node:url";
 
 import { spawnSync } from "node:child_process";
 
@@ -34,7 +34,7 @@ import { loadKey, logUsage, round, fetchJson, sleep } from "./lib/common.js";
 import { measure } from "./lib/mix.js";
 
 const USAGE =
-  'Usage: node narrate.js script.txt --out-dir audio [--voice Kore] [--style "calm, warm"] [--model flash|lite] ' +
+  'Usage: node narrate.js script.txt --out-dir audio [--voice pool|Walnut|Kore] [--style "calm, warm"] [--model flash|lite] ' +
   "[--start 0.5] [--gap 0.4] [--redo 03,07] [--no-words] [--tag label] [--dry-run]";
 
 // USD per 1M tokens, from the Gemini API pricing page (checked 2026-11-10).
@@ -45,11 +45,30 @@ const MODELS = {
 };
 const PRICES_CHECKED = "2026-11-10";
 const PRICE_DOUBLES = Date.UTC(2027, 0, 1);
-// An Australian voice from Google's voice library: a woman, low pitch, "reflective,
-// calm, and reassuring". Chosen by ear from 44. --voice takes any of Google's
-// thirty named voices (Kore, Charon, ...) or any library id.
-const DEFAULT_VOICE = "en-au-storyteller-1";
+// The default, "pool", is one of the voices in assets/voices.json (chosen by ear
+// in a blind test), picked at random for a new output folder and then kept for
+// that folder, so a re-run doesn't re-voice every line. --voice also takes a
+// pool name (Walnut), any of Google's thirty named voices (Kore, Charon, ...)
+// or any library id.
+const DEFAULT_VOICE = "pool";
+const POOL_FILE = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "assets", "voices.json");
 const PARALLEL = 3;
+
+export function loadPool(file = POOL_FILE) {
+  return JSON.parse(fs.readFileSync(file, "utf-8")).voices;
+}
+
+// -> { voice: library id, name: pool name or null, how: why this voice }
+// prev is the last run's narration.json in this folder ({} if none).
+export function pickVoice(asked, pool, prev = {}, rand = Math.random) {
+  const byName = pool.find((v) => v.name.toLowerCase() === String(asked).toLowerCase());
+  if (byName) return { voice: byName.id, name: byName.name, how: "asked for" };
+  if (asked !== "pool") return { voice: asked, name: pool.find((v) => v.id === asked)?.name ?? null, how: "asked for" };
+  // A folder keeps the voice it was first narrated in, whichever it was.
+  if (prev.voice) return { voice: prev.voice, name: pool.find((v) => v.id === prev.voice)?.name ?? null, how: "kept from the last run in this folder" };
+  const v = pool[Math.floor(rand() * pool.length)];
+  return { voice: v.id, name: v.name, how: "picked at random from the pool" };
+}
 // Groq Whisper, for word times: $0.04 an hour of audio, each request billed as at least 10 s.
 const WHISPER = { id: "whisper-large-v3-turbo", usdPerHour: 0.04, minSeconds: 10 };
 
@@ -317,12 +336,15 @@ async function main() {
   const lines = parseScript(fs.readFileSync(a.script, "utf-8"), /\.json$/i.test(a.script));
   const outDir = path.resolve(a.outDir);
   const manifestPath = path.join(outDir, "narration.json");
-  let old = {};
+  let old = {}, prev = {};
   if (fs.existsSync(manifestPath)) {
     try {
-      for (const l of JSON.parse(fs.readFileSync(manifestPath, "utf-8")).lines || []) old[l.id] = l;
-    } catch { old = {}; }
+      prev = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
+      for (const l of prev.lines || []) old[l.id] = l;
+    } catch { old = {}; prev = {}; }
   }
+  const picked = pickVoice(a.voice, loadPool(), prev);
+  a.voice = picked.voice;
   for (const l of lines) {
     l.key = lineKey(l, a);
     l.file = `${l.id}.wav`;
@@ -337,7 +359,7 @@ async function main() {
     // About 15 characters a second of speech, 25 audio tokens a second.
     const estimate = round((chars / 15) * 25 * MODELS[a.model].audio_out / 1e6, 4);
     console.log(JSON.stringify({
-      dry_run: true, model: MODELS[a.model].id, voice: a.voice, lines: lines.length, to_generate: todo.length,
+      dry_run: true, model: MODELS[a.model].id, voice: a.voice, voice_name: picked.name, voice_how: picked.how, lines: lines.length, to_generate: todo.length,
       unchanged: lines.length - todo.length, estimated_cost_usd: estimate, estimated_seconds: Math.round(chars / 15),
     }, null, 2));
     return;
@@ -418,7 +440,7 @@ async function main() {
   const timed = timeline(lines, a.start, a.gap);
   const total = timed.at(-1).end;
   const manifest = {
-    voice: a.voice, model: MODELS[a.model].id, style: a.style, start: a.start, gap: a.gap, total: round(total, 3),
+    voice: a.voice, voice_name: picked.name, voice_how: picked.how, model: MODELS[a.model].id, style: a.style, start: a.start, gap: a.gap, total: round(total, 3),
     lines: timed.map((t, i) => ({ ...t, key: lines[i].key })),
     ...(misheard.length ? { check_these_lines: misheard } : {}),
   };
@@ -434,7 +456,7 @@ async function main() {
   }
   console.log(JSON.stringify({
     success: true, out_dir: outDir, lines: timed.length, generated: todo.length, unchanged: lines.length - todo.length,
-    narration_ends_at: round(total, 3), cost_usd: round(cost), voice: a.voice, model: MODELS[a.model].id,
+    narration_ends_at: round(total, 3), cost_usd: round(cost), voice: a.voice, voice_name: picked.name, voice_how: picked.how, model: MODELS[a.model].id,
     word_times: lines.every((l) => l.words) ? "yes" : (wordsNote || "skipped (--no-words)"),
     ...(finished ? {} : { note: "ffmpeg was not found, so lines were not trimmed or levelled. Install ffmpeg and run again with --redo for each line." }),
     ...(misheard.length ? { check_these_lines: misheard } : {}),

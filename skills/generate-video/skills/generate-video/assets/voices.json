@@ -1,0 +1,77 @@
+{
+  "about": "Narration voices chosen by ear in a blind listening test (30 voices from Google's voice library, rated and compared in pairs without names, accents or descriptions). The default --voice pool picks one of these at random and keeps it for that output folder. Pass a name (--voice Walnut) to choose one. Tone is Google's own description.",
+  "voices": [
+    {
+      "name": "Cobalt",
+      "id": "en-au-tutor-1",
+      "gender": "woman",
+      "accent": "Australian",
+      "pitch": "high",
+      "tone": "Voice is cool, confident, and collaborative"
+    },
+    {
+      "name": "Ripple",
+      "id": "en-us-riko",
+      "gender": "man",
+      "accent": "American (East Coast)",
+      "pitch": "low",
+      "tone": "Sounds confident and clear"
+    },
+    {
+      "name": "Moss",
+      "id": "en-us-enzo",
+      "gender": "man",
+      "accent": "American (West Coast)",
+      "pitch": "low",
+      "tone": "Voice is crisp and eager"
+    },
+    {
+      "name": "Walnut",
+      "id": "en-gb-tutor-9",
+      "gender": "man",
+      "accent": "British (southern English)",
+      "pitch": "low",
+      "tone": "Voice is crisp and eager"
+    },
+    {
+      "name": "Flint",
+      "id": "en-gb-storyteller-2",
+      "gender": "woman",
+      "accent": "British (southern English)",
+      "pitch": "high",
+      "tone": "Voice is resonant and witty"
+    },
+    {
+      "name": "Hollow",
+      "id": "en-au-storyteller-1",
+      "gender": "woman",
+      "accent": "Australian",
+      "pitch": "low",
+      "tone": "Tone is reflective, calm, and reassuring"
+    },
+    {
+      "name": "Tundra",
+      "id": "en-au-storyteller-3",
+      "gender": "woman",
+      "accent": "Australian",
+      "pitch": "high",
+      "tone": "Voice is cool, confident, and collaborative"
+    },
+    {
+      "name": "Acorn",
+      "id": "en-us-tutor-13",
+      "gender": "woman",
+      "accent": "American (Northwest)",
+      "pitch": "high",
+      "tone": "Sounds confident and clear"
+    },
+    {
+      "name": "Kelp",
+      "id": "en-ca-storyteller-2",
+      "gender": "woman",
+      "accent": "Canadian",
+      "pitch": "low",
+      "tone": "Tone is professional yet approachable"
+    }
+  ]
+}
