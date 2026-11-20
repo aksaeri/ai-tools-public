@@ -2,7 +2,7 @@
 
 ## 2026-11-21
 
-- **Voices come from a pool.** `assets/voices.json` lists nine narration voices, chosen by ear in a blind test of 30 from Google's voice library (Australian, British, American and Canadian, five women and four men), each with a short name. The default `--voice pool` picks one at random for a new output folder, and the folder keeps it on later runs. `--voice Walnut` chooses one by name. Google's named voices and library ids still work. The result reports `voice_name` and `voice_how`. The old default, `en-au-storyteller-1`, is in the pool as Hollow, and folders narrated before this update keep their voice.
+- **Voices come from a pool.** `assets/voices.json` lists fourteen narration voices, chosen by ear in a blind test of 30 from Google's voice library (Australian, British, American, Irish, New Zealand, South African and Kenyan; eight women and six men), each with a short name. The default `--voice pool` picks one at random for a new output folder, and the folder keeps it on later runs. `--voice Walnut` chooses one by name. Google's named voices and library ids still work. The result reports `voice_name` and `voice_how`. The old default, `en-au-storyteller-1`, is in the pool as Hollow, and folders narrated before this update keep their voice.
 
 ## 2026-11-10, second update
 

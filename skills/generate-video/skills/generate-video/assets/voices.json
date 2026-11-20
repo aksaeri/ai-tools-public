@@ -58,6 +58,22 @@
       "tone": "Voice is cool, confident, and collaborative"
     },
     {
+      "name": "Ember",
+      "id": "en-nz-training-3",
+      "gender": "woman",
+      "accent": "New Zealand",
+      "pitch": "medium",
+      "tone": "Tone is reflective, calm, and reassuring"
+    },
+    {
+      "name": "Quartz",
+      "id": "en-au-storyteller-4",
+      "gender": "woman",
+      "accent": "Australian",
+      "pitch": "medium",
+      "tone": "Voice is warm and engaging"
+    },
+    {
       "name": "Acorn",
       "id": "en-us-tutor-13",
       "gender": "woman",
@@ -66,12 +82,36 @@
       "tone": "Sounds confident and clear"
     },
     {
-      "name": "Kelp",
-      "id": "en-ca-storyteller-2",
+      "name": "Indigo",
+      "id": "en-za-assistant-7",
       "gender": "woman",
-      "accent": "Canadian",
+      "accent": "South African",
+      "pitch": "high",
+      "tone": "Voice is energetic, colorful, and fast"
+    },
+    {
+      "name": "Umber",
+      "id": "en-ie-storyteller-2",
+      "gender": "man",
+      "accent": "Irish",
+      "pitch": "low",
+      "tone": "Voice is relaxed"
+    },
+    {
+      "name": "Gravel",
+      "id": "en-ke-training-1",
+      "gender": "man",
+      "accent": "Kenyan",
       "pitch": "low",
       "tone": "Tone is professional yet approachable"
+    },
+    {
+      "name": "Ochre",
+      "id": "en-za-assistant-8",
+      "gender": "man",
+      "accent": "South African",
+      "pitch": "medium",
+      "tone": "Voice is relaxed"
     }
   ]
 }
