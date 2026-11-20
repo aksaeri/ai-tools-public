@@ -46,7 +46,7 @@ const MODELS = {
 const PRICES_CHECKED = "2026-11-10";
 const PRICE_DOUBLES = Date.UTC(2027, 0, 1);
 // The default, "pool", is one of the voices in assets/voices.json (chosen by ear
-// in a blind test), picked at random for a new output folder and then kept for
+// in a blind test), picked at random (weighted by preference) for a new output folder and then kept for
 // that folder, so a re-run doesn't re-voice every line. --voice also takes a
 // pool name (Walnut), any of Google's thirty named voices (Kore, Charon, ...)
 // or any library id.
@@ -66,8 +66,11 @@ export function pickVoice(asked, pool, prev = {}, rand = Math.random) {
   if (asked !== "pool") return { voice: asked, name: pool.find((v) => v.id === asked)?.name ?? null, how: "asked for" };
   // A folder keeps the voice it was first narrated in, whichever it was.
   if (prev.voice) return { voice: prev.voice, name: pool.find((v) => v.id === prev.voice)?.name ?? null, how: "kept from the last run in this folder" };
-  const v = pool[Math.floor(rand() * pool.length)];
-  return { voice: v.id, name: v.name, how: "picked at random from the pool" };
+  // In proportion to each voice's weight (how often the listener preferred it), 1 if unset.
+  const weights = pool.map((v) => (v.weight > 0 ? v.weight : 1));
+  let r = rand() * weights.reduce((t, w) => t + w, 0);
+  const v = pool.find((_, i) => (r -= weights[i]) < 0) ?? pool.at(-1);
+  return { voice: v.id, name: v.name, how: "picked at random from the pool, weighted by preference" };
 }
 // Groq Whisper, for word times: $0.04 an hour of audio, each request billed as at least 10 s.
 const WHISPER = { id: "whisper-large-v3-turbo", usdPerHour: 0.04, minSeconds: 10 };

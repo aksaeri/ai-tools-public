@@ -1,5 +1,5 @@
 {
-  "about": "Narration voices chosen by ear in a blind listening test (30 voices from Google's voice library, rated and compared in pairs without names, accents or descriptions). The default --voice pool picks one of these at random and keeps it for that output folder. Pass a name (--voice Walnut) to choose one. Tone is Google's own description.",
+  "about": "Narration voices chosen by ear in a blind listening test (30 voices from Google's voice library, rated and compared in pairs without names, accents or descriptions). Listed best first. weight is how often the listener preferred the voice over another voice in this pool (estimated from 34 paired comparisons). The default --voice pool picks one at random in proportion to weight and keeps it for that output folder. Pass a name (--voice Walnut) to choose one. Tone is Google's own description.",
   "voices": [
     {
       "name": "Cobalt",
@@ -7,7 +7,8 @@
       "gender": "woman",
       "accent": "Australian",
       "pitch": "high",
-      "tone": "Voice is cool, confident, and collaborative"
+      "tone": "Voice is cool, confident, and collaborative",
+      "weight": 0.83
     },
     {
       "name": "Ripple",
@@ -15,7 +16,8 @@
       "gender": "man",
       "accent": "American (East Coast)",
       "pitch": "low",
-      "tone": "Sounds confident and clear"
+      "tone": "Sounds confident and clear",
+      "weight": 0.73
     },
     {
       "name": "Moss",
@@ -23,7 +25,8 @@
       "gender": "man",
       "accent": "American (West Coast)",
       "pitch": "low",
-      "tone": "Voice is crisp and eager"
+      "tone": "Voice is crisp and eager",
+      "weight": 0.63
     },
     {
       "name": "Walnut",
@@ -31,7 +34,8 @@
       "gender": "man",
       "accent": "British (southern English)",
       "pitch": "low",
-      "tone": "Voice is crisp and eager"
+      "tone": "Voice is crisp and eager",
+      "weight": 0.63
     },
     {
       "name": "Flint",
@@ -39,7 +43,8 @@
       "gender": "woman",
       "accent": "British (southern English)",
       "pitch": "high",
-      "tone": "Voice is resonant and witty"
+      "tone": "Voice is resonant and witty",
+      "weight": 0.62
     },
     {
       "name": "Hollow",
@@ -47,7 +52,8 @@
       "gender": "woman",
       "accent": "Australian",
       "pitch": "low",
-      "tone": "Tone is reflective, calm, and reassuring"
+      "tone": "Tone is reflective, calm, and reassuring",
+      "weight": 0.52
     },
     {
       "name": "Tundra",
@@ -55,7 +61,8 @@
       "gender": "woman",
       "accent": "Australian",
       "pitch": "high",
-      "tone": "Voice is cool, confident, and collaborative"
+      "tone": "Voice is cool, confident, and collaborative",
+      "weight": 0.5
     },
     {
       "name": "Ember",
@@ -63,7 +70,8 @@
       "gender": "woman",
       "accent": "New Zealand",
       "pitch": "medium",
-      "tone": "Tone is reflective, calm, and reassuring"
+      "tone": "Tone is reflective, calm, and reassuring",
+      "weight": 0.48
     },
     {
       "name": "Quartz",
@@ -71,7 +79,8 @@
       "gender": "woman",
       "accent": "Australian",
       "pitch": "medium",
-      "tone": "Voice is warm and engaging"
+      "tone": "Voice is warm and engaging",
+      "weight": 0.45
     },
     {
       "name": "Acorn",
@@ -79,7 +88,8 @@
       "gender": "woman",
       "accent": "American (Northwest)",
       "pitch": "high",
-      "tone": "Sounds confident and clear"
+      "tone": "Sounds confident and clear",
+      "weight": 0.4
     },
     {
       "name": "Indigo",
@@ -87,7 +97,8 @@
       "gender": "woman",
       "accent": "South African",
       "pitch": "high",
-      "tone": "Voice is energetic, colorful, and fast"
+      "tone": "Voice is energetic, colorful, and fast",
+      "weight": 0.36
     },
     {
       "name": "Umber",
@@ -95,7 +106,8 @@
       "gender": "man",
       "accent": "Irish",
       "pitch": "low",
-      "tone": "Voice is relaxed"
+      "tone": "Voice is relaxed",
+      "weight": 0.32
     },
     {
       "name": "Gravel",
@@ -103,7 +115,8 @@
       "gender": "man",
       "accent": "Kenyan",
       "pitch": "low",
-      "tone": "Tone is professional yet approachable"
+      "tone": "Tone is professional yet approachable",
+      "weight": 0.3
     },
     {
       "name": "Ochre",
@@ -111,7 +124,8 @@
       "gender": "man",
       "accent": "South African",
       "pitch": "medium",
-      "tone": "Voice is relaxed"
+      "tone": "Voice is relaxed",
+      "weight": 0.23
     }
   ]
 }
